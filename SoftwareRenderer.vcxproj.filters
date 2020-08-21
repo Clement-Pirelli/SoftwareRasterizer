@@ -24,9 +24,6 @@
     <ClCompile Include="Dependencies\RenderToWindow\RenderToWindow.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
-    <ClCompile Include="Dependencies\vec3.cpp">
-      <Filter>Resource Files</Filter>
-    </ClCompile>
     <ClCompile Include="CoreLoop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -47,16 +44,7 @@
     <ClInclude Include="Dependencies\RenderToWindow\RenderToWindow.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="Dependencies\AABB.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\vec3.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
     <ClInclude Include="CoreLoop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ModelLoader.h">
@@ -72,12 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImageLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vec4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mat4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utilities.h">

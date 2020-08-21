@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{737B13ED-4594-4639-97FF-AF724EB84010}</ProjectGuid>
-    <RootNamespace>SoftwareRenderer</RootNamespace>
+    <ProjectGuid>{FEC8A3D6-C574-4F42-9240-F73AE3AC1BFA}</ProjectGuid>
+    <RootNamespace>GraphicsLib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -39,13 +39,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -69,6 +69,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
@@ -78,9 +81,24 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -100,7 +118,6 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Code\SoftwareRenderer\Dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -124,51 +141,15 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Code\SoftwareRenderer\Dependencies;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CoreLoop.cpp" />
-    <ClCompile Include="Dependencies\Logger\Logger.cpp" />
-    <ClCompile Include="Dependencies\RenderToWindow\RenderToWindow.cpp" />
-    <ClCompile Include="ImageLoader.cpp" />
-    <ClCompile Include="ModelLoader.cpp" />
-    <ClCompile Include="Source.cpp" />
-    <ClCompile Include="Time.cpp" />
+    <ClInclude Include="..\Dependencies\AABB.h" />
+    <ClInclude Include="..\Dependencies\vec3.h" />
+    <ClInclude Include="..\Framebuffer.h" />
+    <ClInclude Include="..\mat4.h" />
+    <ClInclude Include="..\vec4.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CoreLoop.h" />
-    <ClInclude Include="Dependencies\Logger\Logger.h" />
-    <ClInclude Include="Dependencies\RenderToWindow\RenderToWindow.h" />
-    <ClInclude Include="Dependencies\stb_image.h" />
-    <ClInclude Include="Dependencies\tiny_obj_loader.h" />
-    <ClInclude Include="ImageLoader.h" />
-    <ClInclude Include="Time.h" />
-    <ClInclude Include="Triangle.h" />
-    <ClInclude Include="ModelLoader.h" />
-    <ClInclude Include="Utilities.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="GraphicsLib\GraphicsLib.vcxproj">
-      <Project>{fec8a3d6-c574-4f42-9240-f73ae3ac1bfa}</Project>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-    </ProjectReference>
+    <ClCompile Include="..\Dependencies\vec3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

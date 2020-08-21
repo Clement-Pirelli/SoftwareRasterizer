@@ -2,16 +2,16 @@
 #include <cstring>
 #include <utility>
 #include <limits>
+#include <vector>
 #include "AABB.h"
 #include "vec3.h"
-#include <vector>
 #include "Framebuffer.h"
-#include "CoreLoop.h"
-#include "Triangle.h"
 #include "ModelLoader.h"
 #include "ImageLoader.h"
 #include "vec4.h"
 #include "mat4.h"
+#include "CoreLoop.h"
+#include "Triangle.h"
 
 struct PipelineInfo
 {
@@ -66,9 +66,10 @@ void drawTriangle(const Triangle &triangle, const PipelineInfo &pipeline)
 		return;
 	}
 
+#pragma warning (disable:4244)
 	//for every pixel in the aabb, rasterize
-	for(int y = static_cast<int>(triangleAABB.min.y); y < static_cast<int>(triangleAABB.max.y); y++)
-	for (int x = static_cast<int>(triangleAABB.min.x); x < static_cast<int>(triangleAABB.max.x); x++)
+	for(uint32_t y = static_cast<uint32_t>(triangleAABB.min.y); y <= static_cast<uint32_t>(triangleAABB.max.y); y++)
+	for (uint32_t x = static_cast<uint32_t>(triangleAABB.min.x); x <= static_cast<uint32_t>(triangleAABB.max.x); x++)
 	{
 		const BarycentricCoordinates barycentricCoords = transformedTriangle.calculate2DBarycentricCoords(vec3(static_cast<float>(x),static_cast<float>(y),.0f));
 		//if we're inside the triangle, draw it
