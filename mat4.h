@@ -16,7 +16,7 @@ private:
 			vecs[3] = vec4(m[12], m[13], m[14], m[15]);
 		}
 
-		vec4 operator[](int i)
+		vec4 operator[](size_t i)
 		{
 			return vecs[i];
 		}
@@ -40,17 +40,7 @@ public:
 		return elements[i];
 	}
 
-	inline float operator[](int i) const
-	{
-		return elements[i];
-	}
-
 	inline float &operator[](size_t i)
-	{
-		return elements[i];
-	}
-
-	inline float &operator[](int i)
 	{
 		return elements[i];
 	}
@@ -93,10 +83,10 @@ public:
 		MatrixAsVectors thisAsVectors(*this);
 		MatrixAsVectors otherAsVectors(transposed(other));
 
-		for(size_t y = 0; y < 4; y++)
-		for(size_t x = 0; x < 4; x++)
+		for(size_t y = 0; y < 4U; y++)
+		for(size_t x = 0; x < 4U; x++)
 		{
-			result.elements[x + 4 * y] = vec4::dot(thisAsVectors[x], otherAsVectors[y]);
+			result[x + 4U * y] = vec4::dot(thisAsVectors[x], otherAsVectors[y]);
 		}
 
 		return result;

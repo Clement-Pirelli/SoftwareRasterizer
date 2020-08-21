@@ -4,11 +4,15 @@ union vec4
 {
 	vec4() = default;
 	vec4(float e0, float e1, float e2, float e3) : e{ e0,e1,e2,e3 } {}
-	inline float operator[](int i) const { return e[i]; }
-	inline float &operator[](int i) { return e[i]; }
+	inline float operator[](size_t i) const { return e[i]; }
+	inline float &operator[](size_t i) { return e[i]; }
 	inline vec4 operator/(float value) { return vec4(x/value, y/value, z/value, w/value); }
 	vec3 xyz() { return vec3(x,y,z); }
 
+	//4201 relates to a nonstandard extension, namely "nameless struct/union"
+	//in this case, I'm just writing this for msvc so I don't mind
+#pragma warning (push)
+#pragma warning (disable:4201)
 	struct
 	{
 		float x, y, z, w;
@@ -18,6 +22,7 @@ union vec4
 	{
 		float r, g, b, a;
 	};
+#pragma warning (pop)
 
 	static float dot(const vec4 &a, const vec4 &b)
 	{

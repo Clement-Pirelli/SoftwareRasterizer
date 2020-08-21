@@ -1,6 +1,5 @@
 #include "RenderToWindow.h"
 #include "Logger/Logger.h"
-#pragma system_header
 
 #pragma region WINDOW DISPLAY
 
@@ -8,6 +7,9 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #include <stdio.h>
+
+#pragma warning(push)
+#pragma warning(disable: 42)
 
 struct RenderTarget {
 	HDC device;
@@ -29,7 +31,7 @@ struct RenderTarget {
 	}
 	~RenderTarget() { delete[] data; }
 	inline int  size() const {
-		return width * height;
+		return static_cast<int>(width * height);
 	}
 	void clear(unsigned color) {
 		const int count = size();
@@ -42,8 +44,8 @@ struct RenderTarget {
 	}
 	void present() {
 		StretchDIBits(device,
-			0, 0, width, height,
-			0, 0, width, height,
+			0, 0, static_cast<int>(width), static_cast<int>(height),
+			0, 0, static_cast<int>(width), static_cast<int>(height),
 			data, &info,
 			DIB_RGB_COLORS, SRCCOPY);
 	}
@@ -63,14 +65,14 @@ makeColor(unsigned char red, unsigned char green, unsigned char blue, unsigned c
 	return result;
 }
 
-static LRESULT CALLBACK
-Win32DefaultProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
-	switch (message) {
-	case WM_CLOSE: { PostQuitMessage(0); } break;
-	default: { return DefWindowProcA(window, message, wparam, lparam); } break;
-	}
-	return 0;
-}
+//static LRESULT CALLBACK
+//Win32DefaultProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+//	switch (message) {
+//	case WM_CLOSE: { PostQuitMessage(0); } break;
+//	default: { return DefWindowProcA(window, message, wparam, lparam); } break;
+//	}
+//	return 0;
+//}
 
 #pragma endregion
 
@@ -103,7 +105,7 @@ RenderToWindow::RenderToWindow(size_t width, size_t height, const char *title) :
 	if (RegisterClassExA(&wc))
 	{
 		DWORD window_style = (WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX));
-		RECT rc = { 0, 0, width, height };
+		RECT rc = { 0, 0, static_cast<int>(width), static_cast<int>(height) };
 		if (!AdjustWindowRect(&rc, window_style, FALSE))
 		{
 			Logger::logError("Couldn't show the image : window rect adjustment failed!");
@@ -159,7 +161,7 @@ void RenderToWindow::updateImage(color *image)
 		for (size_t x = 0; x < width; x++)
 		{
 			color &currentColor = image[y * width + x];
-			rt->pixel(x, y, makeColor(currentColor.r, currentColor.g, currentColor.b, currentColor.a));
+			rt->pixel(static_cast<int>(x), static_cast<int>(y), makeColor(currentColor.r, currentColor.g, currentColor.b, currentColor.a));
 		}
 
 	rt->present();

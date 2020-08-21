@@ -67,11 +67,11 @@ void drawTriangle(const Triangle &triangle, const PipelineInfo &pipeline)
 	}
 
 	//for every pixel in the aabb, rasterize
-	for(size_t y = triangleAABB.min.y; y < triangleAABB.max.y; y++)
-	for (size_t x = triangleAABB.min.x; x < triangleAABB.max.x; x++)
+	for(int y = static_cast<int>(triangleAABB.min.y); y < static_cast<int>(triangleAABB.max.y); y++)
+	for (int x = static_cast<int>(triangleAABB.min.x); x < static_cast<int>(triangleAABB.max.x); x++)
 	{
 		const BarycentricCoordinates barycentricCoords = transformedTriangle.calculate2DBarycentricCoords(vec3(static_cast<float>(x),static_cast<float>(y),.0f));
-		//if we're insie the triangle, draw it
+		//if we're inside the triangle, draw it
 		if (barycentricCoords.areDegenerate()) continue;		
 
 		const float zValue = barycentricCoords.weigh(

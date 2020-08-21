@@ -8,8 +8,8 @@ union vec3
 {
 	vec3() = default;
 	vec3(float e0, float e1, float e2) : e{ e0,e1,e2 } {}
-	inline float operator[](int i) const { return e[i]; }
-	inline float &operator[](int i) { return e[i]; }
+	inline float operator[](size_t i) const { return e[i]; }
+	inline float &operator[](size_t i) { return e[i]; }
 	inline vec3 operator-() const { return vec3(-x, -y, -z); }
 	vec3 &operator+=(const vec3 &other);
 	inline vec3 &operator-=(const vec3 &other);
@@ -37,6 +37,10 @@ union vec3
 	static bool refract(const vec3 &incident, const vec3 &normal, float niOverNt, vec3 &refracted);
 	static vec3 saturate(const vec3 &value);
 
+	//4201 relates to a nonstandard extension, namely "nameless struct/union"
+	//in this case, I'm just writing this for msvc so I don't mind
+#pragma warning (push)
+#pragma warning (disable:4201)
 	struct
 	{
 		float x, y, z;
@@ -45,6 +49,8 @@ union vec3
 	{
 		float r, g, b;
 	};
+#pragma warning(pop)
+
 	float e[3]{};
 };
 
