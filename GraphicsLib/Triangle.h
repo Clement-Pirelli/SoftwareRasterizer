@@ -1,6 +1,7 @@
 #pragma once
 #include "AABB.h"
 #include <utility>
+#include "Utilities.h"
 
 struct BarycentricCoordinates
 {

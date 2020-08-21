@@ -2,7 +2,7 @@
 #define AABB_H_DEFINED
 #include "vec3.h"
 #include <limits>
-#include "../Utilities.h"
+#include "Utilities.h"
 
 #define _min(a,b) (a < b ? a : b)
 #define _max(a,b) (a < b ? b : a)

@@ -15,24 +15,42 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Framebuffer.h">
+    <ClInclude Include="GraphicsLibrary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\mat4.h">
+    <ClInclude Include="StrongTypedef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\vec4.h">
+    <ClInclude Include="Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Dependencies\AABB.h">
+    <ClInclude Include="mat4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Dependencies\vec3.h">
+    <ClInclude Include="Triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vec4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vec3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AABB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Dependencies\vec3.cpp">
+    <ClCompile Include="vec3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
