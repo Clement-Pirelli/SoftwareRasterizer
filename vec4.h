@@ -6,6 +6,8 @@ union vec4
 	vec4(float e0, float e1, float e2, float e3) : e{ e0,e1,e2,e3 } {}
 	inline float operator[](int i) const { return e[i]; }
 	inline float &operator[](int i) { return e[i]; }
+	inline vec4 operator/(float value) { return vec4(x/value, y/value, z/value, w/value); }
+	vec3 xyz() { return vec3(x,y,z); }
 
 	struct
 	{

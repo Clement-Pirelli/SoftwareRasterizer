@@ -18,69 +18,104 @@ struct PipelineInfo
 	FrameBuffer<color> &colorImage;
 	FrameBuffer<float> &depthImage;
 	const Image &texture;
+	mat4 model, view, projection;
 };
 
-float isApproximatively(float a, float b, float approx)
+void drawTriangle(const Triangle &triangle, const PipelineInfo &pipeline)
 {
-	return (a + approx) > b && (a - approx) < b;
-}
+	//vertex shader
+	Triangle transformedTriangle = triangle;
 
-template<class T>
-T weighByBarycentricCoords(const T &firstValue, const T &secondValue, const T &thirdValue, const vec3 &barycentricCoords)
-{
-	return firstValue * barycentricCoords.x + secondValue * barycentricCoords.y + thirdValue * barycentricCoords.z;
-}
-
-void drawTriangle(const Triangle &triangle, PipelineInfo pipeline)
-{
-	const AABB &imageBounds = pipeline.colorImage.bounds;
-	const AABB aabb = triangle.calculateAABB().boundInto(imageBounds);
-
-	if (isApproximatively(aabb.min.x, aabb.max.x, std::numeric_limits<float>::epsilon()) &&
-		isApproximatively(aabb.min.y, aabb.max.y, std::numeric_limits<float>::epsilon()))
+	mat4::Viewport viewport =
 	{
-		//triangle is outsite of the bounds of the screen, we can return since we're not going to draw anything
-		return;
+		.x = 0,
+		.y = 0,
+		.width = pipeline.colorImage.width,
+		.height = pipeline.colorImage.height,
+	};
+
+	mat4 viewportMat = mat4::viewport(viewport);
+
+	for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+	{
+		Triangle::Vertex &vertex = transformedTriangle.vertices[vertexIndex];
+
+		vec4 position = vec4::fromPoint(vertex.position);
+		position = pipeline.projection * pipeline.view * pipeline.model * position;
+		if (!isApproximatively(position.w, .0f, .00001f)) position = position / position.w;
+		position = viewportMat * position;
+		vertex.position = position.xyz();
+
+		vec4 normal = vec4::fromDirection(vertex.normal);
+		normal = mat4::inversed(mat4::transposed(pipeline.view * pipeline.model)) * normal;
+		vertex.normal = normal.xyz();
 	}
 
 	//backface culling
-	if(vec3::dot(triangle.calculateFaceNormal(), vec3(.0f,.0f,1.0f)) < 0)
+	if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
 	{
 		return;
 	}
 
-	for(size_t y = aabb.min.y; y < aabb.max.y; y++)
-	for (size_t x = aabb.min.x; x < aabb.max.x; x++)
+	const AABB &imageBounds = pipeline.colorImage.bounds;
+	const AABB triangleAABB = transformedTriangle.calculateAABB().boundInto(imageBounds);
+
+	if (triangleAABB.isPoint())
 	{
-		vec3 barycentricCoords = triangle.calculate2DBarycentricCoords(vec3(static_cast<float>(x),static_cast<float>(y),.0f));
-		if (barycentricCoords.x < 0.0f || barycentricCoords.y < 0.0f || barycentricCoords.z < 0.0f) continue;
+		//triangle is outside of the bounds of the screen, we can return since we're not going to draw anything
+		return;
+	}
 
-		float zValue = weighByBarycentricCoords(triangle.v1.z, triangle.v2.z, triangle.v3.z, barycentricCoords);
+	//for every pixel in the aabb, rasterize
+	for(size_t y = triangleAABB.min.y; y < triangleAABB.max.y; y++)
+	for (size_t x = triangleAABB.min.x; x < triangleAABB.max.x; x++)
+	{
+		const BarycentricCoordinates barycentricCoords = transformedTriangle.calculate2DBarycentricCoords(vec3(static_cast<float>(x),static_cast<float>(y),.0f));
+		//if we're insie the triangle, draw it
+		if (barycentricCoords.areDegenerate()) continue;		
 
+		const float zValue = barycentricCoords.weigh(
+			transformedTriangle.vertices[0].position.z, 
+			transformedTriangle.vertices[1].position.z, 
+			transformedTriangle.vertices[2].position.z
+		);
+
+		//depth test
 		float &depth = pipeline.depthImage.at(x, y);
 		if(depth < zValue)
 		{
 			depth = zValue;
 
-			const vec3 vertexCol = weighByBarycentricCoords(
-				triangle.c1,
-				triangle.c2,
-				triangle.c3,
-				barycentricCoords);
+			const vec3 vertexCol = barycentricCoords.weigh(
+				transformedTriangle.vertices[0].color,
+				transformedTriangle.vertices[1].color,
+				transformedTriangle.vertices[2].color
+				);
 
-			const vec3 normal = weighByBarycentricCoords(
-				triangle.n1,
-				triangle.n2,
-				triangle.n3,
-				barycentricCoords).normalized();
+			const vec3 normal = barycentricCoords.weigh(
+				transformedTriangle.vertices[0].normal,
+				transformedTriangle.vertices[1].normal,
+				transformedTriangle.vertices[2].normal
+			).normalized();
 
-			const float u = weighByBarycentricCoords(triangle.us.x, triangle.us.y, triangle.us.z, barycentricCoords);
-			const float v = weighByBarycentricCoords(triangle.vs.x, triangle.vs.y, triangle.vs.z, barycentricCoords);
+
+			const float u = barycentricCoords.weigh(
+				transformedTriangle.vertices[0].u, 
+				transformedTriangle.vertices[1].u, 
+				transformedTriangle.vertices[2].u
+			);
+
+			const float v = barycentricCoords.weigh(
+				transformedTriangle.vertices[0].v, 
+				transformedTriangle.vertices[1].v, 
+				transformedTriangle.vertices[2].v
+			);
+			
+			
 			const vec3 textureCol = pipeline.texture.atUV(u, v);
 
-			float lambertian = vec3::dot(normal, vec3(.0f, .0f, 1.0f));
-			vec3 col = textureCol * vertexCol * lambertian;
-			col = col.clampedBy(vec3(.0f,.0f,.0f), vec3(1.0f,1.0f,1.0f));
+			const float lambertian = vec3::dot(normal, vec3(.0f, .0f, 1.0f));
+			const vec3 col = vec3::saturate(textureCol * vertexCol * lambertian);
 
 			pipeline.colorImage.at(x, y) = { static_cast<uint8_t>(col.b * 255.0f),static_cast<uint8_t>(col.g * 255.0f),static_cast<uint8_t>(col.r * 255.0f), 255 };
 		}
@@ -89,9 +124,6 @@ void drawTriangle(const Triangle &triangle, PipelineInfo pipeline)
 
 int main()
 {
-	mat4 mat = mat4::inversed(mat4::transposed(mat4::scale(vec3(1.0f, 2.0f, 2.0f))));
-
-
 	constexpr size_t width = 1000u, height = 1000u;
 	auto colorImage = FrameBuffer<color>(width, height, {0,0,0,255});
 	auto depthImage = FrameBuffer<float>(width, height, .0f);
@@ -102,8 +134,8 @@ int main()
 
 	Image texture = ImageLoader::loadImage("assets/head_diffuse.png");
 
-	//CoreLoop().run([&tri, &colorImage, &depthImage, &window]() 
-	//{
+	CoreLoop().run([&](const Time &time) 
+	{
 		colorImage.clear({0,0,0,255});
 		depthImage.clear(.0f);
 
@@ -111,7 +143,10 @@ int main()
 		{
 			.colorImage = colorImage,
 			.depthImage = depthImage,
-			.texture = texture
+			.texture = texture,
+			.model = mat4::rotateY(time.asSeconds()),
+			.view = mat4::identity(),
+			.projection = mat4::identity()
 		};
 
 		for(const auto &triangle : triangles)
@@ -119,13 +154,10 @@ int main()
 			drawTriangle(triangle, pipeline);
 		}
 		window.updateImage(colorImage.data);
-	//});
-		window.handleMessagesBlocking();
+	});
 
 	ImageLoader::freeImage(texture);
 	
-
-
 
 	return 0;
 }

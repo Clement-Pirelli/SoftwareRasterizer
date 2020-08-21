@@ -35,7 +35,7 @@ union vec3
 	static vec3 lerp(const vec3 &v1, const vec3 &v2, float t);
 	static vec3 reflect(const vec3 &incident, const vec3 &normal);
 	static bool refract(const vec3 &incident, const vec3 &normal, float niOverNt, vec3 &refracted);
-	
+	static vec3 saturate(const vec3 &value);
 
 	struct
 	{

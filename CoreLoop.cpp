@@ -1,14 +1,17 @@
 #include "CoreLoop.h"
 #include <Windows.h>
 
-void CoreLoop::run(std::function<void()> update) const
+void CoreLoop::run(std::function<void(const Time &)> update) const
 {
-	MSG msg;
-	while (GetMessage(&msg, 0, 0, 0))
+	while(true)
 	{
-		if (msg.message == WM_QUIT) { return; }
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		update();
+		MSG msg;
+		while (PeekMessageA(&msg, 0, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT) { return; }
+			TranslateMessage(&msg);
+			DispatchMessageA(&msg);
+		}
+		update(Time::now());
 	}
 }

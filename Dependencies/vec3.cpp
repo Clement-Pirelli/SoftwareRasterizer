@@ -128,3 +128,8 @@ bool vec3::refract(const vec3 &incident, const vec3 &normal, float niOverNt, vec
 	}
 	return false;
 }
+
+vec3 vec3::saturate(const vec3 &value)
+{
+	return value.clampedBy(vec3(.0f, .0f, .0f), vec3(1.0f, 1.0f, 1.0f));
+}

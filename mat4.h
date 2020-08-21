@@ -98,6 +98,8 @@ public:
 		{
 			result.elements[x + 4 * y] = vec4::dot(thisAsVectors[x], otherAsVectors[y]);
 		}
+
+		return result;
 	}
 
 	inline static mat4 transposed(const mat4 mat)
@@ -157,6 +159,23 @@ public:
 			.0f, by.y, .0f, .0f,
 			.0f, .0f, by.z, .0f,
 			.0f, .0f, .0f, 1.0f
+			});
+	}
+
+	struct Viewport
+	{
+		float x = 0, y = 0;
+		size_t width = 0, height = 0;
+	};
+	inline static mat4 viewport(const Viewport &viewport)
+	{
+		const float halfWidth = static_cast<float>(viewport.width) / 2.0f;
+		const float halfHeight = static_cast<float>(viewport.height) / 2.0f;
+		return mat4({
+			halfWidth, .0f,.0f,viewport.x + halfWidth,
+			.0f, halfHeight, .0f, viewport.y + halfHeight,
+			.0f,.0f,1.0f,.0f,
+			.0f,.0f,.0f,1.0f
 			});
 	}
 

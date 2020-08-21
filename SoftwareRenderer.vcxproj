@@ -149,6 +149,7 @@
     <ClCompile Include="ImageLoader.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Time.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CoreLoop.h" />
@@ -161,8 +162,10 @@
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="mat4.h" />
+    <ClInclude Include="Time.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="ModelLoader.h" />
+    <ClInclude Include="Utilities.h" />
     <ClInclude Include="vec4.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
