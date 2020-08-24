@@ -81,10 +81,10 @@ namespace gl
 			}
 
 			//backface culling
-			//if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
-			//{
-			//	return;
-			//}
+			if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
+			{
+				return;
+			}
 
 			AABB imageBounds = pipeline.colorImage.bounds;
 			imageBounds.max.x -= 1.0f;
@@ -117,7 +117,7 @@ namespace gl
 
 					//depth test
 					float &depth = pipeline.depthImage.at(x, y);
-					if (depth < zValue)
+					if (depth > zValue)
 					{
 						depth = zValue;
 
@@ -149,7 +149,7 @@ namespace gl
 
 						const vec3 textureCol = vec3(1.0f,1.0f,1.0f);// pipeline.texture.atUV(u, v);
 
-						const float lambertian = vec3::dot(normal, vec3(.0f, 1.0f, .0f)) * .5f + .5f;
+						const float lambertian = vec3::dot(normal, vec3(.0f, .0f, 1.0f)) * .5f + .5f;
 						const vec3 col = vec3::saturate(textureCol * vertexCol * lambertian);
 
 						pipeline.colorImage.at(x, y) = { static_cast<uint8_t>(col.b * 255.0f),static_cast<uint8_t>(col.g * 255.0f),static_cast<uint8_t>(col.r * 255.0f), 255 };

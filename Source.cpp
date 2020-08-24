@@ -32,7 +32,7 @@ int main()
 	{
 		.width = width,
 		.height = height,
-		.clearValue = .0f,
+		.clearValue = 1000000000.0f,
 		.clearOnFirstUse = true
 	};
 	auto depthImage = gl::FrameBuffer<float>(depthFrameBufferInfo);
