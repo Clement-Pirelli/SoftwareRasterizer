@@ -43,7 +43,7 @@ int main()
 
 	Image texture = ImageLoader::loadImage("assets/head_diffuse.png");
 
-	CoreLoop().run([&](const Time &time) 
+	CoreLoop::run([&](const Time &time)
 	{
 		gl::PipelineInfo pipeline
 		{
@@ -51,12 +51,20 @@ int main()
 			.depthImage = depthImage,
 			.texture = texture,
 			.model = mat4::rotateY(time.asSeconds()),
-			.view = mat4::identity(),
-			.projection = mat4::identity()
+			.view = mat4::translate(vec3(.0f,.0f, -2.0f)),
+			.projection = mat4::perspective(
+				mat4::PerspectiveProjection
+				{
+					.fovX = 2.0f * 3.14159265359f,
+					.aspectRatio = width/static_cast<float>(height),
+					.zfar = time.asSeconds(),
+					.znear = .1f
+				}
+			)
 		};
 
 		gl::Rasterizer::draw(model, pipeline);
-		
+
 		window.updateImage(colorImage.data);
 	});
 

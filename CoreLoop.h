@@ -3,6 +3,7 @@
 #include "Time.h"
 class CoreLoop
 {
+	CoreLoop() = delete;
 public:
-	void run(std::function<void(const Time &)> update) const;
+	static void run(std::function<void(const Time &)> update);
 };

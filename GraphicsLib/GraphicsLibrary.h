@@ -59,14 +59,20 @@ namespace gl
 
 			mat4 viewportMat = mat4::viewport(viewport);
 
+			float vertexWs[3] = {};
 			for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 			{
 				Triangle::Vertex &vertex = transformedTriangle.vertices[vertexIndex];
 
 				vec4 position = vec4::fromPoint(vertex.position);
-				position = pipeline.projection * pipeline.view * pipeline.model * position;
-				if (!isApproximatively(position.w, .0f, .00001f)) position = position / position.w;
+				position = pipeline.model * position;
+				position = pipeline.view * position;
+				position = pipeline.projection * position;
 				position = viewportMat * position;
+
+				vertexWs[vertexIndex] = position.w;
+				if (!isApproximatively(position.w, .0f, .00001f)) position = position / position.w;
+				
 				vertex.position = position.xyz();
 
 				vec4 normal = vec4::fromDirection(vertex.normal);
@@ -75,12 +81,14 @@ namespace gl
 			}
 
 			//backface culling
-			if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
-			{
-				return;
-			}
+			//if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
+			//{
+			//	return;
+			//}
 
-			const AABB &imageBounds = pipeline.colorImage.bounds;
+			AABB imageBounds = pipeline.colorImage.bounds;
+			imageBounds.max.x -= 1.0f;
+			imageBounds.max.y -= 1.0f;
 			const AABB triangleAABB = transformedTriangle.calculateAABB().boundInto(imageBounds);
 
 			if (triangleAABB.isPoint())
@@ -93,7 +101,11 @@ namespace gl
 			for (uint32_t y = static_cast<uint32_t>(triangleAABB.min.y); y <= static_cast<uint32_t>(triangleAABB.max.y); y++)
 				for (uint32_t x = static_cast<uint32_t>(triangleAABB.min.x); x <= static_cast<uint32_t>(triangleAABB.max.x); x++)
 				{
-					const BarycentricCoordinates barycentricCoords = transformedTriangle.calculate2DBarycentricCoords(vec3(static_cast<float>(x), static_cast<float>(y), .0f));
+					const auto barycentricCoords = 
+						transformedTriangle.calculate2DBarycentricCoords(
+							vec3(static_cast<float>(x), static_cast<float>(y), .0f),
+							vertexWs);
+
 					//if we're inside the triangle, draw it
 					if (barycentricCoords.areDegenerate()) continue;
 
@@ -135,12 +147,13 @@ namespace gl
 						);
 
 
-						const vec3 textureCol = pipeline.texture.atUV(u, v);
+						const vec3 textureCol = vec3(1.0f,1.0f,1.0f);// pipeline.texture.atUV(u, v);
 
-						const float lambertian = vec3::dot(normal, vec3(.0f, .0f, 1.0f));
+						const float lambertian = vec3::dot(normal, vec3(.0f, 1.0f, .0f)) * .5f + .5f;
 						const vec3 col = vec3::saturate(textureCol * vertexCol * lambertian);
 
 						pipeline.colorImage.at(x, y) = { static_cast<uint8_t>(col.b * 255.0f),static_cast<uint8_t>(col.g * 255.0f),static_cast<uint8_t>(col.r * 255.0f), 255 };
+						//pipeline.colorImage.at(x, y) = { static_cast<uint8_t>(depth * 255.0f),static_cast<uint8_t>(depth * 255.0f),static_cast<uint8_t>(depth * 255.0f), 255 };
 					}
 				}
 		}

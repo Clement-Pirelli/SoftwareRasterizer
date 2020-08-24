@@ -1,8 +1,7 @@
 #include "CoreLoop.h"
 #include <Windows.h>
 
-void CoreLoop::run(std::function<void(const Time &)> update) const
-{
+void CoreLoop::run(std::function<void(const Time &)> update){
 	while(true)
 	{
 		MSG msg;
