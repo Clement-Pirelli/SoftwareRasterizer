@@ -147,15 +147,11 @@
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GraphicsLibrary.h" />
     <ClInclude Include="Image.h" />
-    <ClInclude Include="mat4.h" />
+    <ClInclude Include="mat.h" />
     <ClInclude Include="StrongTypedef.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Utilities.h" />
-    <ClInclude Include="vec3.h" />
-    <ClInclude Include="vec4.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="vec3.cpp" />
+    <ClInclude Include="vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

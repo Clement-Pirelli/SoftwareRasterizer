@@ -45,7 +45,7 @@ struct Triangle
 			coordinates[2] = c;
 		}
 
-		float coordinates[3] = {};
+		vec3 coordinates = {};
 	};
 
 
@@ -87,9 +87,9 @@ struct Triangle
 			s[i][2] = vertices[0].position[i] - point[i];
 		}
 		vec3 u = vec3::cross(s[0], s[1]);
-		if (std::abs(u.z) > 1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
+		if (std::abs(u.z()) > 1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
 		{
-			auto coordinates = BarycentricCoordinates(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+			auto coordinates = BarycentricCoordinates(1.f - (u.x() + u.y()) / u.z(), u.y() / u.z(), u.x() / u.z());
 			
 			for(int i = 0; i < 3; i++)
 			{

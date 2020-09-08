@@ -1,8 +1,8 @@
 #ifndef AABB_H_DEFINED
 #define AABB_H_DEFINED
-#include "vec3.h"
 #include <limits>
 #include "Utilities.h"
+#include "vec.h"
 
 #define _min(a,b) (a < b ? a : b)
 #define _max(a,b) (a < b ? b : a)
@@ -34,8 +34,8 @@ public:
 
 	bool isPoint() const
 	{
-		return isApproximatively(min.x, max.x, std::numeric_limits<float>::epsilon()) &&
-			isApproximatively(min.y, max.y, std::numeric_limits<float>::epsilon());
+		return isApproximatively(min.x(), max.x(), std::numeric_limits<float>::epsilon()) &&
+			isApproximatively(min.y(), max.y(), std::numeric_limits<float>::epsilon());
 	}
 
 	vec3 min, max;
