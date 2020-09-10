@@ -128,8 +128,8 @@ struct vec
 
 	vec<N> clampedBy(vec<N> min, vec<N> max) const
 	{
-		vec3 copy = *this;
-		for (size_t i = 0; i < 3; i++)
+		vec<N> copy = *this;
+		for (size_t i = 0; i < N; i++)
 		{
 			if (copy.e[i] < min.e[i]) copy.e[i] = min.e[i];
 			if (copy.e[i] > max.e[i]) copy.e[i] = max.e[i];
@@ -153,30 +153,35 @@ struct vec
 		return v1 * (1.0f - t) + v2 * t;
 	}
 
+	vec2 xy() const requires (N >= 3)
+	{
+		return vec2(x(), y());
+	};
+
 	vec3 xyz() const requires (N >= 4)
 	{
-		return vec3({ e[0], e[1], e[2] });
+		return vec3(x(), y(), z());
 	};
 
-	vec(float x, float y) requires (N == 2)
+	vec(float givenX, float givenY) requires (N == 2)
 	{
-		e[0] = x;
-		e[1] = y;
+		e[0] = givenX;
+		e[1] = givenY;
 	};
 
-	vec(float x, float y, float z) requires (N == 3)
+	vec(float givenX, float givenY, float givenZ) requires (N == 3)
 	{
-		e[0] = x;
-		e[1] = y;
-		e[2] = z;
+		e[0] = givenX;
+		e[1] = givenY;
+		e[2] = givenZ;
 	};
 
-	vec(float x, float y, float z, float w) requires (N == 4)
+	vec(float givenX, float givenY, float givenZ, float givenW) requires (N == 4)
 	{
-		e[0] = x;
-		e[1] = y;
-		e[2] = z;
-		e[3] = w;
+		e[0] = givenX;
+		e[1] = givenY;
+		e[2] = givenZ;
+		e[3] = givenW;
 	};
 
 	static float dot(const vec<N> &a, const vec<N> &b)
@@ -192,9 +197,9 @@ struct vec
 	static vec3 cross(const vec3 &v1, const vec3 &v2) requires (N == 3)
 	{
 		return vec3({
-			v1[1] * v2[2] - v1[2] * v2[1],
-			-(v1[0] * v2[2] - v1[2] * v2[0]),
-			v1[0] * v2[1] - v1[1] * v2[0]
+			v1.y() * v2.z() - v1.z() * v2.y(),
+			v1.z() * v2.x() - v1.x() * v2.z(),
+			v1.x() * v2.y() - v1.y() * v2.x()
 			});
 	};
 	
@@ -213,33 +218,38 @@ struct vec
 
 	static vec4 fromPoint(const vec3 &point) requires (N == 4)
 	{
-		return vec4({ point.x(), point.y(), point.z(), 1.0f });
+		return vec4(point.x(), point.y(), point.z(), 1.0f);
 	};
 
 	static vec4 fromDirection(const vec3 &direction) requires (N == 4)
 	{
-		return vec4({ direction.x(), direction.y(), direction.z(), .0f });
+		return vec4(direction.x(), direction.y(), direction.z(), .0f);
 	};
 
 	vec3 rotatedX(float angle) const requires (N == 3)
 	{
-		return vec3({ x(), y() * cosf(angle) - z * sinf(angle), y() * sinf(angle) + z() * cosf(angle) });
+		return vec3(x(), y() * cosf(angle) - z * sinf(angle), y() * sinf(angle) + z() * cosf(angle));
 	};
 
 	vec3 rotatedY(float angle) const requires (N == 3)
 	{
-		return vec3({ x() * cosf(angle) + z() * sinf(angle), y(), -x() * sinf(angle) + z() * cosf(angle) });
+		return vec3(x() * cosf(angle) + z() * sinf(angle), y(), -x() * sinf(angle) + z() * cosf(angle));
 	};
 
 	vec3 rotatedZ(float angle) const requires (N == 3)
 	{
-		return vec3({ x() * cosf(angle) - y() * sinf(angle), x() * sinf(angle) + y() * cosf(angle), z() });
+		return vec3(x() * cosf(angle) - y() * sinf(angle), x() * sinf(angle) + y() * cosf(angle), z());
 	};
 
 	static vec3 reflect(const vec3 &incident, const vec3 &normal) requires (N == 3)
 	{
 		return incident - (normal * dot(incident, normal) * 2.0f);
 	};
+
+	static constexpr size_t size()
+	{
+		return N;
+	}
 
 	std::array<float, N> e = {};
 };

@@ -63,7 +63,7 @@ std::vector<Triangle> ModelLoader::loadModel(const char *filePath)
 	std::vector<Triangle> triangles = {};
 	triangles.reserve(vertices.size() / 3);
 
-	for(int i = 0; i < vertices.size(); i+=3)
+	for(int i = 0; i < vertices.size(); i += 3)
 	{
 		const Triangle triangle
 		{

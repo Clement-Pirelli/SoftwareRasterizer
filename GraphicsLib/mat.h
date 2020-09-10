@@ -48,6 +48,19 @@ struct squaremat
 		return result;
 	}
 
+	inline squaremat<N> operator *(const squaremat<N> &other) const
+	{
+		squaremat<N> result = {};
+
+		for (size_t y = 0; y < N; y++)
+		for (size_t x = 0; x < N; x++)
+		{
+			result.at(x, y) = vec<N>::dot(rowAt(y), other.columnAt(x));
+		}
+
+		return result;
+	}
+
 	vec<N> operator *(const vec<N> &v) const
 	{
 		vec<N> result = {};
@@ -55,7 +68,7 @@ struct squaremat
 		{
 			for(size_t elementIndex = 0; elementIndex < N; elementIndex++)
 			{
-				result[rowIndex] += v[elementIndex] * at(rowIndex, elementIndex);
+				result[rowIndex] += v[elementIndex] * at(elementIndex, rowIndex);
 			}
 		}
 
@@ -82,19 +95,6 @@ struct squaremat
 		return result;
 	}
 
-	inline squaremat<N> operator *(const squaremat<N> &other) const
-	{
-		squaremat<N> result = {};
-
-		for (size_t y = 0; y < N; y++)
-		for (size_t x = 0; x < N; x++)
-		{
-			result.at(x, y) = vec<N>::dot(rowAt(y), other.columnAt(x));
-		}
-
-		return result;
-	}
-
 	squaremat<N> transposed() const 
 	{
 		squaremat<N> copy = *this;
@@ -108,7 +108,7 @@ struct squaremat
 		return copy;
 	}
 
-	static squaremat<N> identity()
+	constexpr static squaremat<N> identity()
 	{
 		std::array<float, N*N> resultArr = {};
 		for (size_t y = 0; y < N; y++)
@@ -120,31 +120,31 @@ struct squaremat
 		return squaremat<N>(resultArr);
 	}
 
-	static mat3x3 rotatedX(float byRadians) requires (N == 3)
+	static squaremat<N> rotatedX(float byRadians) requires (N >= 3)
 	{
 		return mat3x3({
 			1.0f, .0f,			 .0f,				
 			 .0f, cosf(byRadians), -sinf(byRadians),
 			 .0f, sinf(byRadians), cosf(byRadians)
-			});
+			}).expandTo<N>();
 	};
 
-	static mat3x3 rotatedY(float byRadians) requires (N == 3)
+	static squaremat<N> rotatedY(float byRadians) requires (N >= 3)
 	{
 		return mat3x3({
 			cosf(byRadians), .0f, sinf(byRadians),
 			.0f,			1.0f, .0f,			
 			-sinf(byRadians),.0f, cosf(byRadians)
-			});
+			}).expandTo<N>();
 	};
 
-	static mat3x3 rotateZ(float byRadians) requires (N == 3)
+	static squaremat<N> rotateZ(float byRadians) requires (N >= 3)
 	{
 		return mat3x3({
 			cosf(byRadians), -sinf(byRadians),	 .0f,
 			sinf(byRadians), cosf(byRadians),	 .0f,
 			.0f,			.0f,				1.0f
-			});
+			}).expandTo<N>();
 	};
 
 	static mat4x4 translate(const vec3 &by) requires (N == 4)
@@ -157,13 +157,13 @@ struct squaremat
 			});
 	};
 	
-	static mat3x3 scale(const vec3 &by) requires (N == 3)
+	static squaremat<N> scale(const vec3 &by) requires (N >= 3)
 	{
 		return mat3x3({
 			by.x(), .0f, .0f,
 			.0f, by.y(), .0f,
 			.0f, .0f, by.z()
-			});
+			}).expandTo<N>();
 	};
 
 	struct ViewportDescription
@@ -184,17 +184,24 @@ struct squaremat
 	};
 
 	template<size_t M>
-	squaremat<M> expandTo() requires(M > N)
+	squaremat<M> expandTo() requires(M >= N)
 	{
-		squaremat<M> result = squaremat<M>::identity();
-
-		for (size_t y = 0; y < N; y++)
-		for (size_t x = 0; x < N; x++)
+		if constexpr (M == N)
 		{
-			result.at(x, y) = at(x, y);
+			return *this;
 		}
+		else 
+		{
+			squaremat<M> result = squaremat<M>::identity();
 
-		return result;
+			for (size_t y = 0; y < N; y++)
+				for (size_t x = 0; x < N; x++)
+				{
+					result.at(x, y) = at(x, y);
+				}
+
+			return result;
+		}
 	};
 
 	squaremat<N-1> calculateMinorAt(size_t row, size_t column) const requires (N >= 2)
@@ -240,7 +247,7 @@ struct squaremat
 		for (size_t x = 0; x < N; x++)
 		{
 			const bool positive = ((x + y) % 2) == 0;
-			adjugate.at(x, y) = (positive ? 1.0f : -1.0f) * calculateMinorAt(x, y).calculateDeterminant();
+			adjugate.at(y, x) = (positive ? 1.0f : -1.0f) * calculateMinorAt(x, y).calculateDeterminant();
 		}
 
 		return adjugate;

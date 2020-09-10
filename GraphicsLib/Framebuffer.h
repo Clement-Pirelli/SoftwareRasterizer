@@ -52,17 +52,17 @@ namespace gl
 
 		size_t width = {}, height = {};
 		T *data = nullptr;
-		const AABB bounds;
+		const AABB2 bounds;
 		const bool clearOnFirstUse;
 		const T clearValue;
 
 	private:
 		[[nodiscard]]
-		AABB calculateBounds() const
+		AABB2 calculateBounds() const
 		{
-			vec3 min = vec3(0.0f, 0.0f, std::numeric_limits<float>::min());
-			vec3 max = vec3(static_cast<float>(width), static_cast<float>(height), std::numeric_limits<float>::max());
-			return AABB(min, max);
+			vec2 min = vec2(0.0f, 0.0f);
+			vec2 max = vec2(static_cast<float>(width), static_cast<float>(height));
+			return AABB2(min, max);
 		}
 	};
 }

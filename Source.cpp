@@ -14,45 +14,9 @@
 #include "GraphicsLibrary.h"
 #include <iostream>
 
-template<size_t N>
-std::ostream &operator<<(std::ostream &os, const squaremat<N> &mat)
-{
-	for (size_t y = 0; y < N; y++)
-	{
-		os << "|\t";
-		for (size_t x = 0; x < N; x++)
-		{
-			os << mat.at(x, y) << "\t|\t";
-		}
-		os << '\n';
-	}
-	
-	return os;
-}
-
 int main()
 {
-	mat4x4 m = mat4x4::identity();
-	std::cout << "identity:\n";
-	std::cout << m;
-	m = m * mat4x4::translate(vec3(1.0f, 2.0f, 1.0f));
-	std::cout << "translate (1.0f, 2.0f, 1.0f):\n";
-	std::cout << m;
-	m = m * mat3x3::scale(vec3(20.0f, 3.0f, .5f)).expandTo<4>();
-	std::cout << "scale (20.0f,3.0f,.5f):\n";
-	std::cout << m;
-	[[maybe_unused]] float det = m.calculateDeterminant();
-
-	mat4x4 mAdjugate = m.calculateAdjugate();
-	std::cout << "Adjugate:\n";
-	std::cout << mAdjugate;
-
-	mat4x4 mInversed = m.inversed();
-	std::cout << "Inversed:\n";
-	std::cout << mInversed;
-
 	constexpr size_t width = 1000u, height = 1000u;
-
 
 	gl::FrameBuffer<color>::CreateInfo colorFrameBufferInfo
 	{

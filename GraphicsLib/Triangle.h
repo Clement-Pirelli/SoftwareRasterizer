@@ -60,11 +60,11 @@ struct Triangle
 	Vertex vertices[3];
 
 	[[nodiscard]]
-	AABB calculateAABB() const noexcept
+	AABB2 calculateAABB2() const noexcept
 	{
-		vec3 min = vertices[0].position, max = vertices[0].position;
+		vec2 min = vertices[0].position.xy(), max = vertices[0].position.xy();
 
-		for (size_t i = 0; i < 3; i++)
+		for (size_t i = 0; i < vec2::size(); i++)
 		{
 			min[i] = _min(vertices[0].position[i], vertices[1].position[i]);
 			min[i] = _min(min[i], vertices[2].position[i]);
@@ -73,12 +73,12 @@ struct Triangle
 			max[i] = _max(max[i], vertices[2].position[i]);
 		}
 
-		return AABB(min, max);
+		return AABB2(min, max);
 	}
 
 	//taken from : https://github.com/ssloy/tinyrenderer/
 	[[nodiscard]]
-	BarycentricCoordinates calculate2DBarycentricCoords(const vec3 &point, [[maybe_unused]] float vertexWs[3]) const noexcept
+	BarycentricCoordinates calculate2DBarycentricCoords(const vec2 &point, float vertexWs[3]) const noexcept
 	{
 		vec3 s[2];
 		for (int i = 2; i--; ) {

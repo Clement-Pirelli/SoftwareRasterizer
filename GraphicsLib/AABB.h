@@ -8,24 +8,24 @@
 #define _max(a,b) (a < b ? b : a)
 
 
-class AABB
+class AABB2
 {
 public:
-	AABB(const vec3 &givenMin, const vec3 &givenMax) : min(givenMin), max(givenMax) {}
-	AABB(){}
+	AABB2(const vec2 &givenMin, const vec2 &givenMax) : min(givenMin), max(givenMax) {}
+	AABB2(){}
 
-	static AABB unite(const AABB &firstBox, const AABB &secondBox)
+	static AABB2 unite(const AABB2 &firstBox, const AABB2 &secondBox)
 	{
-		vec3 min = {}, max = {};
-		for (size_t i = 0; i < 3; i++)
+		vec2 min = {}, max = {};
+		for (size_t i = 0; i < 2; i++)
 		{
 			min[i] = _min(firstBox.min[i], secondBox.min[i]);
 			max[i] = _max(firstBox.max[i], secondBox.max[i]);
 		}
-		return AABB(min, max);
+		return AABB2(min, max);
 	}
 
-	AABB &boundInto(const AABB &other)
+	AABB2 &boundInto(const AABB2 &other)
 	{
 		min = min.clampedBy(other.min, other.max);
 		max = max.clampedBy(other.min, other.max);
@@ -38,7 +38,7 @@ public:
 			isApproximatively(min.y(), max.y(), std::numeric_limits<float>::epsilon());
 	}
 
-	vec3 min, max;
+	vec2 min, max;
 };
 
 
