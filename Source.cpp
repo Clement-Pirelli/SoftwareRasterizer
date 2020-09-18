@@ -12,7 +12,6 @@
 #include "CoreLoop.h"
 #include "Triangle.h"
 #include "GraphicsLibrary.h"
-#include <iostream>
 
 int main()
 {
