@@ -44,10 +44,9 @@ namespace gl
 		}
 
 	private:
-		static void drawTriangle(const Triangle &triangle, const PipelineInfo &pipeline)
+		static void drawTriangle(Triangle triangle, const PipelineInfo &pipeline)
 		{
 			//vertex shader
-			Triangle transformedTriangle = triangle;
 
 			mat4x4::ViewportDescription viewportDescription =
 			{
@@ -62,7 +61,7 @@ namespace gl
 			float vertexWs[3] = {};
 			for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 			{
-				Triangle::Vertex &vertex = transformedTriangle.vertices[vertexIndex];
+				Triangle::Vertex &vertex = triangle.vertices[vertexIndex];
 
 				vec4 position = vec4::fromPoint(vertex.position);
 				position = pipeline.model * position;
@@ -81,15 +80,15 @@ namespace gl
 			}
 
 			//backface culling
-			if (vec3::dot(transformedTriangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
+			if (vec3::dot(triangle.calculateFaceNormal(), vec3(.0f, .0f, 1.0f)) < 0)
 			{
 				return;
 			}
 
 			AABB2 imageBounds = pipeline.colorImage.bounds;
-			imageBounds.max.x() -= 1.0f;
-			imageBounds.max.y() -= 1.0f;
-			const AABB2 triangleAABB = transformedTriangle.calculateAABB2().boundInto(imageBounds);
+			imageBounds.max.x()--;
+			imageBounds.max.y()--;
+			const AABB2 triangleAABB = triangle.calculateAABB2().boundInto(imageBounds);
 
 			if (triangleAABB.isPoint())
 			{
@@ -102,7 +101,7 @@ namespace gl
 			for (uint32_t x = static_cast<uint32_t>(triangleAABB.min.x()); x <= static_cast<uint32_t>(triangleAABB.max.x()); x++)
 			{
 				const auto barycentricCoords = 
-					transformedTriangle.calculate2DBarycentricCoords(
+					triangle.calculate2DBarycentricCoords(
 						vec2(static_cast<float>(x), static_cast<float>(y)),
 						vertexWs);
 
@@ -110,9 +109,9 @@ namespace gl
 				if (barycentricCoords.areDegenerate()) continue;
 
 				const float zValue = barycentricCoords.weigh(
-					transformedTriangle.vertices[0].position.z(),
-					transformedTriangle.vertices[1].position.z(),
-					transformedTriangle.vertices[2].position.z()
+					triangle.vertices[0].position.z(),
+					triangle.vertices[1].position.z(),
+					triangle.vertices[2].position.z()
 				);
 
 				//depth test
@@ -122,28 +121,28 @@ namespace gl
 					depth = zValue;
 
 					const vec3 vertexCol = barycentricCoords.weigh(
-						transformedTriangle.vertices[0].color,
-						transformedTriangle.vertices[1].color,
-						transformedTriangle.vertices[2].color
+						triangle.vertices[0].color,
+						triangle.vertices[1].color,
+						triangle.vertices[2].color
 					);
 
 					const vec3 normal = barycentricCoords.weigh(
-						transformedTriangle.vertices[0].normal,
-						transformedTriangle.vertices[1].normal,
-						transformedTriangle.vertices[2].normal
+						triangle.vertices[0].normal,
+						triangle.vertices[1].normal,
+						triangle.vertices[2].normal
 					).normalized();
 
 
 					const float u = barycentricCoords.weigh(
-						transformedTriangle.vertices[0].u,
-						transformedTriangle.vertices[1].u,
-						transformedTriangle.vertices[2].u
+						triangle.vertices[0].u,
+						triangle.vertices[1].u,
+						triangle.vertices[2].u
 					);
 
 					const float v = barycentricCoords.weigh(
-						transformedTriangle.vertices[0].v,
-						transformedTriangle.vertices[1].v,
-						transformedTriangle.vertices[2].v
+						triangle.vertices[0].v,
+						triangle.vertices[1].v,
+						triangle.vertices[2].v
 					);
 
 
@@ -153,11 +152,11 @@ namespace gl
 					const vec3 col = (textureCol * vertexCol * lambertian).saturate();
 					
 					pipeline.colorImage.at(x, y) = 
-						{ 
-							.b = static_cast<uint8_t>( col.b() * 255.0f), 
-							.g = static_cast<uint8_t>( col.g() * 255.0f), 
-							.r = static_cast<uint8_t>( col.r() * 255.0f), 
-							.a = 255 
+					{ 
+						.b = static_cast<uint8_t>( col.b() * 255.0f), 
+						.g = static_cast<uint8_t>( col.g() * 255.0f), 
+						.r = static_cast<uint8_t>( col.r() * 255.0f), 
+						.a = 255 
 					};
 				}
 			}
