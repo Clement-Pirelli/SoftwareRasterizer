@@ -100,7 +100,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Code\SoftwareRenderer\Dependencies;D:\Code\SoftwareRenderer\GraphicsLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies;$(SolutionDir)GraphicsLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -133,7 +133,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Code\SoftwareRenderer\Dependencies;D:\Code\SoftwareRenderer\GraphicsLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies;$(SolutionDir)GraphicsLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -147,8 +147,6 @@
     <ClCompile Include="CoreLoop.cpp" />
     <ClCompile Include="Dependencies\Logger\Logger.cpp" />
     <ClCompile Include="Dependencies\RenderToWindow\RenderToWindow.cpp" />
-    <ClCompile Include="ImageLoader.cpp" />
-    <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Time.cpp" />
   </ItemGroup>
@@ -156,11 +154,7 @@
     <ClInclude Include="CoreLoop.h" />
     <ClInclude Include="Dependencies\Logger\Logger.h" />
     <ClInclude Include="Dependencies\RenderToWindow\RenderToWindow.h" />
-    <ClInclude Include="Dependencies\stb_image.h" />
-    <ClInclude Include="Dependencies\tiny_obj_loader.h" />
-    <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="Time.h" />
-    <ClInclude Include="ModelLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="GraphicsLib\GraphicsLib.vcxproj">

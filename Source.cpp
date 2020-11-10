@@ -6,7 +6,7 @@
 #include "AABB.h"
 #include "Framebuffer.h"
 #include "ModelLoader.h"
-#include "ImageLoader.h"
+#include "Image.h"
 #include "vec.h"
 #include "mat.h"
 #include "CoreLoop.h"
@@ -39,7 +39,7 @@ int main()
 	
 	gl::Model model = ModelLoader::loadModel("assets/head.obj");
 
-	Image texture = ImageLoader::loadImage("assets/head_diffuse.png");
+	Image texture("assets/head_diffuse.png");
 
 	CoreLoop::run([&](const Time &time)
 	{
@@ -65,8 +65,6 @@ int main()
 
 		window.updateImage(colorImage.data);
 	});
-
-	ImageLoader::freeImage(texture);
 
 	return 0;
 }
