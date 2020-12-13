@@ -7,39 +7,50 @@
 #define _min(a,b) (a < b ? a : b)
 #define _max(a,b) (a < b ? b : a)
 
-
-class AABB2
+template<uint32_t N>
+class AABB
 {
 public:
-	AABB2(const vec2 &givenMin, const vec2 &givenMax) : min(givenMin), max(givenMax) {}
-	AABB2(){}
 
-	static AABB2 unite(const AABB2 &firstBox, const AABB2 &secondBox)
+	constexpr AABB(const vec<N> &givenMin, const vec<N> &givenMax) : min(givenMin), max(givenMax) {}
+	constexpr AABB() {}
+
+	static AABB<N> united(const AABB<N> &firstBox, const AABB<N> &secondBox)
 	{
 		vec2 min = {}, max = {};
-		for (size_t i = 0; i < 2; i++)
+		for (uint32_t i = 0; i < N; i++)
 		{
 			min[i] = _min(firstBox.min[i], secondBox.min[i]);
 			max[i] = _max(firstBox.max[i], secondBox.max[i]);
 		}
-		return AABB2(min, max);
+		return AABB<N>(min, max);
 	}
 
-	AABB2 &boundInto(const AABB2 &other)
+	AABB<N> &boundInto(const AABB<N> &other)
 	{
 		min = min.clampedBy(other.min, other.max);
 		max = max.clampedBy(other.min, other.max);
 		return *this;
 	}
 
-	bool isPoint() const
+	bool hasArea() const
 	{
-		return isApproximatively(min.x(), max.x(), std::numeric_limits<float>::epsilon()) &&
-			isApproximatively(min.y(), max.y(), std::numeric_limits<float>::epsilon());
+		for(uint32_t i = 0; i < N; i++)
+		{
+			if(isApproximatively(min[i], max[i], std::numeric_limits<float>::epsilon()))
+				return false;
+		}
+		return true;
 	}
 
-	vec2 min, max;
+	vec<N> min;
+	vec<N> max;
 };
 
+using AABB2 = AABB<2>;
+using AABB3 = AABB<3>;
+
+#undef _min
+#undef _max
 
 #endif // !AABB_H_DEFINED

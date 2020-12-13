@@ -3,7 +3,8 @@
 #include <utility>
 #include "Utilities.h"
 
-
+#define _min(a,b) (a < b ? a : b)
+#define _max(a,b) (a < b ? b : a)
 
 struct Triangle
 {
@@ -78,7 +79,7 @@ struct Triangle
 
 	//taken from : https://github.com/ssloy/tinyrenderer/
 	[[nodiscard]]
-	BarycentricCoordinates calculate2DBarycentricCoords(const vec2 &point, float vertexWs[3]) const noexcept
+	BarycentricCoordinates calculate2DBarycentricCoords(const vec2 &point, std::array<float, 3> vertexWs) const noexcept
 	{
 		vec3 s[2];
 		for (int i = 2; i--; ) {
@@ -114,3 +115,7 @@ struct Triangle
 		return vec3::cross(vertices[1].position - vertices[0].position, vertices[2].position - vertices[0].position).normalized();
 	}
 };
+
+
+#undef _min
+#undef _max
