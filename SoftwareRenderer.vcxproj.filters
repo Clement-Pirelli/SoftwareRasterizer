@@ -27,12 +27,6 @@
     <ClCompile Include="CoreLoop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ModelLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageLoader.cpp">
-      <Filter>Resource Files</Filter>
-    </ClCompile>
     <ClCompile Include="Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,18 +39,6 @@
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="CoreLoop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ModelLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\stb_image.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\tiny_obj_loader.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Time.h">
