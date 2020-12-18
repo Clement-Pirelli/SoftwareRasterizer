@@ -52,7 +52,7 @@ struct Triangle
 
 	struct Vertex
 	{
-		vec3 position;
+		vec4 position;
 		vec3 color;
 		float u, v;
 		vec3 normal;
@@ -112,7 +112,7 @@ struct Triangle
 	[[nodiscard]]
 	vec3 calculateFaceNormal() const noexcept
 	{
-		return vec3::cross(vertices[1].position - vertices[0].position, vertices[2].position - vertices[0].position).normalized();
+		return vec3::cross((vertices[1].position - vertices[0].position).xyz(), (vertices[2].position - vertices[0].position).xyz()).normalized();
 	}
 };
 

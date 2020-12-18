@@ -65,15 +65,6 @@ makeColor(unsigned char red, unsigned char green, unsigned char blue, unsigned c
 	return result;
 }
 
-//static LRESULT CALLBACK
-//Win32DefaultProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
-//	switch (message) {
-//	case WM_CLOSE: { PostQuitMessage(0); } break;
-//	default: { return DefWindowProcA(window, message, wparam, lparam); } break;
-//	}
-//	return 0;
-//}
-
 #pragma endregion
 
 
@@ -152,7 +143,7 @@ void RenderToWindow::handleMessagesBlocking()
 	}
 }
 
-void RenderToWindow::updateImage(color *image)
+void RenderToWindow::updateImage(vec4 *image)
 {
 	if (rt == nullptr) return;
 
@@ -160,8 +151,17 @@ void RenderToWindow::updateImage(color *image)
 	for (size_t y = 0; y < height; y++)
 		for (size_t x = 0; x < width; x++)
 		{
-			color &currentColor = image[y * width + x];
-			rt->pixel(static_cast<int>(x), static_cast<int>(y), makeColor(currentColor.r, currentColor.g, currentColor.b, currentColor.a));
+			vec4 currentColor = image[y * width + x] * 255.0f;
+			rt->pixel(
+				static_cast<int>(x), 
+				static_cast<int>(y), 
+				makeColor(
+					unsigned char(currentColor.r()), 
+					unsigned char(currentColor.g()), 
+					unsigned char(currentColor.b()), 
+					unsigned char(currentColor.a())
+				)
+			);
 		}
 
 	rt->present();

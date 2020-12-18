@@ -39,7 +39,8 @@ std::vector<Triangle> ModelLoader::loadModel(const char *filePath)
 			vertex.position = {
 				attrib.vertices[3 * index.vertex_index + 0],
 				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
+				attrib.vertices[3 * index.vertex_index + 2],
+				1.0f
 			};
 
 			vertex.u = attrib.texcoords[2 * index.texcoord_index + 0];

@@ -1,6 +1,7 @@
 #ifndef RENDER_TO_WINDOW_H_DEFINED
 #define RENDER_TO_WINDOW_H_DEFINED
-#include "color.h"
+
+#include "vec.h"
 #pragma system_header
 
 struct RenderTarget;
@@ -12,7 +13,7 @@ public:
 	~RenderToWindow();
 
 	void handleMessagesBlocking();
-	void updateImage(color *image);
+	void updateImage(vec4 *image);
 private:
 	size_t width, height;
 	RenderTarget *rt;

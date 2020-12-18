@@ -9,10 +9,12 @@
 #include "Image.h"
 #include "Utilities.h"
 #include "AABB.h"
+#include <unordered_map>
 
 namespace gl
 {
 	using Model = StrongTypedef<std::vector<Triangle>, struct ModelId>;
+	using BufferHandle = StrongTypedef<uint64_t, struct BufferHandleId>;
 
 	struct PipelineInfo
 	{
@@ -22,31 +24,68 @@ namespace gl
 		mat4x4 model, view, projection;
 	};
 
+	template<typename T, typename U>
+	concept AreSame = requires(T a, U b)
+	{
+		std::is_same_v<std::remove_cv_t<T>, std::remove_cv_t<U>>;
+		std::is_same_v<std::remove_cv_t<U>, std::remove_cv_t<T>>;
+	};
+
+	template<typename T>
+	concept Shader = requires(T a)
+	{
+		std::is_invocable_v<T>;
+		//todo: check the in parameter, out parameter?
+	};
+
+	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+	struct DrawInfo
+	{
+		FrameBuffer<RenderTarget_t> &target;
+		Vertex_t vertexShader;
+		Fragment_t fragmentShader;
+		DepthTest_t depthTest;
+	};
+
+	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+	DrawInfo(FrameBuffer<RenderTarget_t> &target, Vertex_t vertexShader, Fragment_t fragmentShader, DepthTest_t depthTest)->DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t>;
+
+
 	class Rasterizer
 	{
 	public:
-		static void draw(const Model &model, const PipelineInfo &pipeline)
+
+		[[nodiscard]]
+		static BufferHandle uploadBuffer(const Model &model)
 		{
-			if(pipeline.colorImage.clearOnFirstUse)
-			{
-				pipeline.colorImage.clear();
-			}
+			static uint64_t nextHandle = 0U;
+			nextHandle++;
+			buffers[BufferHandle(nextHandle)] = model;
+			return nextHandle;
+		}
 
-			if (pipeline.depthImage.clearOnFirstUse)
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+		static void drawTriangles(BufferHandle handle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t>& drawInfo)
+		{
+			if(buffers.contains(handle))
 			{
-				pipeline.depthImage.clear();
-			}
-
-			for (const auto &triangle : model.get())
-			{
-				drawTriangle(triangle, pipeline);
+				const Model &buffer = buffers[handle];
+				for (const auto &triangle : buffer.get())
+				{
+					drawTriangle(triangle, drawInfo);
+				}
 			}
 		}
 
 	private:
 
-		static void rasterize(size_t x, size_t y, Triangle& triangle, std::array<float, 3> vertexWs, const PipelineInfo &pipeline)
+		inline static std::unordered_map<BufferHandle, Model> buffers;
+
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+		static void rasterize(size_t x, size_t y, Triangle& triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t> &drawInfo)
 		{
+			const std::array<float, 3> vertexWs{ triangle.vertices[0].position.w(), triangle.vertices[1].position.w(), triangle.vertices[2].position.w(), };
+
 			const auto barycentricCoords =
 				triangle.calculate2DBarycentricCoords(
 					vec2(static_cast<float>(x), static_cast<float>(y)),
@@ -55,18 +94,14 @@ namespace gl
 			//if we're inside the triangle, draw it
 			if (barycentricCoords.areDegenerate()) return;
 
-			const float zValue = barycentricCoords.weigh(
-				triangle.vertices[0].position.z(),
-				triangle.vertices[1].position.z(),
-				triangle.vertices[2].position.z()
+			const vec4 pos = barycentricCoords.weigh(
+				triangle.vertices[0].position,
+				triangle.vertices[1].position,
+				triangle.vertices[2].position
 			);
 
-			//depth test
-			float &depth = pipeline.depthImage.at(x, y);
-			if (depth > zValue)
+			if (drawInfo.depthTest(x, y, pos.z()))
 			{
-				depth = zValue;
-
 				const vec3 vertexCol = barycentricCoords.weigh(
 					triangle.vertices[0].color,
 					triangle.vertices[1].color,
@@ -92,48 +127,36 @@ namespace gl
 					triangle.vertices[2].v
 				);
 
-
-				const vec3 textureCol = pipeline.texture.atUV(u, v);
-
-				const float lambertian = vec3::dot(normal, vec3(.0f, .0f, 1.0f));
-				const vec3 col = (textureCol * vertexCol * lambertian).saturate();
-
-				pipeline.colorImage.at(x, y) =
+				const Triangle::Vertex weighedVertex
 				{
-					.b = static_cast<uint8_t>(col.b() * 255.0f),
-					.g = static_cast<uint8_t>(col.g() * 255.0f),
-					.r = static_cast<uint8_t>(col.r() * 255.0f),
-					.a = 255
+					.position = pos,
+					.color = vertexCol,
+					.u = u,
+					.v = v,
+					.normal = normal
 				};
+
+				drawInfo.target.at(x, y) = drawInfo.fragmentShader(weighedVertex);
 			}
 		}
 
-		static void drawTriangle(Triangle triangle, const PipelineInfo &pipeline)
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+		static void drawTriangle(Triangle triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t> &drawInfo)
 		{
 			//vertex shader
 			mat4x4 viewportMat = mat4x4::viewport({
 				.x = 0,
 				.y = 0,
-				.width = pipeline.colorImage.width,
-				.height = pipeline.colorImage.height,
+				.width = drawInfo.target.width,
+				.height = drawInfo.target.height,
 			});
 
-			std::array<float,3> vertexWs{};
-			for (size_t vertexIndex = 0; vertexIndex < 3U; vertexIndex++)
+			for (Triangle::Vertex &vertex : triangle.vertices)
 			{
-				Triangle::Vertex &vertex = triangle.vertices[vertexIndex];
-
-				vec4 position = vec4::fromPoint(vertex.position);
-				position = viewportMat* pipeline.projection * pipeline.view * pipeline.model * position;
-
-				vertexWs[vertexIndex] = position.w();
+				vertex = drawInfo.vertexShader(vertex);
+				vec4 &position = vertex.position;
+				position = viewportMat * position;
 				if (!isApproximatively(position.w(), .0f, .00001f)) position /= position.w();
-				
-				vertex.position = position.xyz();
-
-				vec4 normal = vec4::fromDirection(vertex.normal);
-				normal = (pipeline.model).inversed().transposed() * normal;
-				vertex.normal = normal.xyz();
 			}
 
 			//backface culling
@@ -142,7 +165,7 @@ namespace gl
 				return;
 			}
 
-			AABB2 imageBounds = pipeline.colorImage.bounds;
+			AABB2 imageBounds = drawInfo.target.bounds;
 			imageBounds.max.x()--;
 			imageBounds.max.y()--;
 			const AABB2 triangleAABB = triangle.calculateAABB2().boundInto(imageBounds);
@@ -156,7 +179,7 @@ namespace gl
 			for (uint32_t y = static_cast<uint32_t>(triangleAABB.min.y()); y <= static_cast<uint32_t>(triangleAABB.max.y()); y++)
 			for (uint32_t x = static_cast<uint32_t>(triangleAABB.min.x()); x <= static_cast<uint32_t>(triangleAABB.max.x()); x++)
 			{
-				rasterize(x, y, triangle, vertexWs, pipeline);
+				rasterize(x, y, triangle, drawInfo);
 			}
 		}
 	};

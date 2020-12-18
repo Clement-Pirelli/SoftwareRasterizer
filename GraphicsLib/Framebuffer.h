@@ -11,7 +11,6 @@ namespace gl
 			size_t width = 0;
 			size_t height = 0; 
 			T clearValue = {};
-			bool clearOnFirstUse = false;
 		};
 
 		FrameBuffer(const CreateInfo &info) :
@@ -19,7 +18,6 @@ namespace gl
 			height(info.height),
 			data(new T[info.width * info.height]),
 			bounds(calculateBounds()),
-			clearOnFirstUse(info.clearOnFirstUse),
 			clearValue(info.clearValue)
 		{
 			clear();
@@ -53,7 +51,6 @@ namespace gl
 		size_t width = {}, height = {};
 		T *data = nullptr;
 		const AABB2 bounds;
-		const bool clearOnFirstUse;
 		const T clearValue;
 
 	private:
