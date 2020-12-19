@@ -38,17 +38,19 @@ namespace gl
 		//todo: check the in parameter, out parameter?
 	};
 
-	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
+	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
 	struct DrawInfo
 	{
 		FrameBuffer<RenderTarget_t> &target;
 		Vertex_t vertexShader;
 		Fragment_t fragmentShader;
-		DepthTest_t depthTest;
+		FrameBuffer<float>* depthBuffer = nullptr;
 	};
 
-	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
-	DrawInfo(FrameBuffer<RenderTarget_t> &target, Vertex_t vertexShader, Fragment_t fragmentShader, DepthTest_t depthTest)->DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t>;
+	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
+	DrawInfo(FrameBuffer<RenderTarget_t> &a, Vertex_t b, Fragment_t c, FrameBuffer<float>*d)->DrawInfo<RenderTarget_t, Vertex_t, Fragment_t>;
+	template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
+	DrawInfo(FrameBuffer<RenderTarget_t> &a, Vertex_t b, Fragment_t c)->DrawInfo<RenderTarget_t, Vertex_t, Fragment_t>;
 
 
 	class Rasterizer
@@ -64,8 +66,8 @@ namespace gl
 			return nextHandle;
 		}
 
-		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
-		static void drawTriangles(BufferHandle handle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t>& drawInfo)
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
+		static void drawTriangles(BufferHandle handle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t>& drawInfo)
 		{
 			if(buffers.contains(handle))
 			{
@@ -81,8 +83,8 @@ namespace gl
 
 		inline static std::unordered_map<BufferHandle, Model> buffers;
 
-		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
-		static void rasterize(size_t x, size_t y, Triangle& triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t> &drawInfo)
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
+		static void rasterize(size_t x, size_t y, Triangle& triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t> &drawInfo)
 		{
 			const std::array<float, 3> vertexWs{ triangle.vertices[0].position.w(), triangle.vertices[1].position.w(), triangle.vertices[2].position.w(), };
 
@@ -99,8 +101,22 @@ namespace gl
 				triangle.vertices[1].position,
 				triangle.vertices[2].position
 			);
-
-			if (drawInfo.depthTest(x, y, pos.z()))
+			
+			auto depthTest = [&drawInfo, x, y](float z)
+			{
+				if (drawInfo.depthBuffer != nullptr)
+				{
+					float &depth = drawInfo.depthBuffer->at(x, y);
+					if (depth <= z)
+					{
+						return false;
+					}
+					depth = z;
+				}
+				return true;
+			};
+			
+			if (depthTest(pos.z()))
 			{
 				const vec3 vertexCol = barycentricCoords.weigh(
 					triangle.vertices[0].color,
@@ -140,8 +156,8 @@ namespace gl
 			}
 		}
 
-		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, typename DepthTest_t>
-		static void drawTriangle(Triangle triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, DepthTest_t> &drawInfo)
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t>
+		static void drawTriangle(Triangle triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t> &drawInfo)
 		{
 			//vertex shader
 			mat4x4 viewportMat = mat4x4::viewport({

@@ -166,3 +166,27 @@ void RenderToWindow::updateImage(vec4 *image)
 
 	rt->present();
 }
+
+void RenderToWindow::updateImage(float *image)
+{
+	if (rt == nullptr) return;
+
+
+	for (size_t y = 0; y < height; y++)
+		for (size_t x = 0; x < width; x++)
+		{
+			float currentColor = image[y * width + x] * 255.0f;
+			rt->pixel(
+				static_cast<int>(x),
+				static_cast<int>(y),
+				makeColor(
+					unsigned char(currentColor),
+					unsigned char(currentColor),
+					unsigned char(currentColor),
+					unsigned char(currentColor)
+				)
+			);
+		}
+
+	rt->present();
+}
