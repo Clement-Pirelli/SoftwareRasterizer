@@ -45,6 +45,15 @@
     <ClInclude Include="mat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BMPWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sampling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonConcepts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image.cpp">

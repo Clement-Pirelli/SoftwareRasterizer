@@ -2,6 +2,7 @@
 #include "AABB.h"
 #include <utility>
 #include "Utilities.h"
+#include <array>
 
 #define _min(a,b) (a < b ? a : b)
 #define _max(a,b) (a < b ? b : a)
@@ -56,6 +57,49 @@ struct Triangle
 		vec3 color;
 		float u, v;
 		vec3 normal;
+
+		static Vertex barycentricInterpolation(BarycentricCoordinates coords, const Vertex& a, const Vertex& b, const Vertex& c)
+		{
+			const vec4 pos = coords.weigh(
+				a.position,
+				b.position,
+				c.position
+			);
+
+			const vec3 vertexCol = coords.weigh(
+				a.color,
+				b.color,
+				c.color
+			);
+
+			const vec3 normal = coords.weigh(
+				a.normal,
+				b.normal,
+				c.normal
+			).normalized();
+
+
+			const float u = coords.weigh(
+				a.u,
+				b.u,
+				c.u
+			);
+
+			const float v = coords.weigh(
+				a.v,
+				b.v,
+				c.v
+			);
+
+			return
+			{
+				.position = pos,
+				.color = vertexCol,
+				.u = u,
+				.v = v,
+				.normal = normal
+			};
+		}
 	};
 	
 	Vertex vertices[3];

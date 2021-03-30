@@ -1,8 +1,4 @@
 ﻿#include "RenderToWindow/RenderToWindow.h"
-#include <cstring>
-#include <utility>
-#include <limits>
-#include <vector>
 #include "AABB.h"
 #include "Framebuffer.h"
 #include "ModelLoader.h"
@@ -12,6 +8,14 @@
 #include "CoreLoop.h"
 #include "Triangle.h"
 #include "GraphicsLibrary.h"
+#include "BMPWriter.h"
+
+#include <cstring>
+#include <utility>
+#include <limits>
+#include <vector>
+#include <span>
+#include <algorithm>
 
 constexpr size_t width = 500u, height = 500u;
 
@@ -81,34 +85,45 @@ MVP getShadowMapMVP(const Time &time)
 	};
 }
 
+struct ShadowPassAttributes
+{
+	static ShadowPassAttributes barycentricInterpolation(Triangle::BarycentricCoordinates, ShadowPassAttributes, ShadowPassAttributes, ShadowPassAttributes)
+	{
+		return {};
+	}
+};
+
 void shadowMapPass(const Time &time)
 {
 	shadowMap.clear();
 
 	MVP mvp = getShadowMapMVP(time);
 
-	auto vertexShader = [&mvp](Triangle::Vertex vertex)
+	auto vertexShader = [&mvp](Triangle::Vertex vertex) -> gl::VertexReturn<ShadowPassAttributes>
 	{
 		vec4 &position = vertex.position;
 		position = mvp.projection * mvp.view * mvp.model * position;
-
-		vec4 normal = vec4::fromDirection(vertex.normal);
-		normal = mvp.model.inversed().transposed() * normal;
-		vertex.normal = normal.xyz();
-
-		return vertex;
+		return { vertex };
 	};
 
-	auto fragmentShader = []([[maybe_unused]] const Triangle::Vertex &vertex)
+	auto fragmentShader = [](const Triangle::Vertex &v, ShadowPassAttributes)
 	{
-		return vec4();
+		return v.position.z();
 	};
 
-	auto drawInfo = gl::DrawInfo{ colorImage, vertexShader, fragmentShader, &shadowMap };
+	auto drawInfo = gl::makeDrawInfo<float, ShadowPassAttributes>(depthImage, vertexShader, fragmentShader, &shadowMap);
 
 	gl::Rasterizer::drawTriangles(handle, drawInfo);
 }
 
+struct ColorPassAttributes
+{
+	vec4 lightSpacePosition;
+	static ColorPassAttributes barycentricInterpolation(Triangle::BarycentricCoordinates coords, ColorPassAttributes a, ColorPassAttributes b, ColorPassAttributes c)
+	{
+		return { coords.weigh(a.lightSpacePosition, b.lightSpacePosition, c.lightSpacePosition) };
+	}
+};
 
 void colorPass(const Time& time)
 {
@@ -116,47 +131,108 @@ void colorPass(const Time& time)
 	depthImage.clear();
 
 	const MVP mvp = getMVP(time);
-
-	auto vertexShader = [&mvp](Triangle::Vertex vertex)
-	{
-		vec4 &position = vertex.position;
-		position = mvp.projection * mvp.view * mvp.model * position;
-
-		vec4 normal = vec4::fromDirection(vertex.normal);
-		normal = mvp.model.inversed().transposed() * normal;
-		vertex.normal = normal.xyz();
-
-		return vertex;
-	};
-
 	const MVP shadowMapMVP = getShadowMapMVP(time);
 
-	auto fragmentShader = [&](const Triangle::Vertex &vertex)
+	auto vertexShader = [&mvp, &shadowMapMVP](Triangle::Vertex vertex) -> gl::VertexReturn<ColorPassAttributes>
+	{
+		const vec4 normal = mvp.model.inversed().transposed() * vec4::fromDirection(vertex.normal);
+		vertex.normal = normal.xyz();
+
+		const vec4 lightSpacePosition = shadowMapMVP.projection * shadowMapMVP.view * mvp.model * vertex.position + normal*.01f;
+
+		vertex.position = mvp.projection * mvp.view * mvp.model * vertex.position;
+
+		return { vertex, { lightSpacePosition } };
+	};
+
+	auto fragmentShader = [&](const Triangle::Vertex &vertex, ColorPassAttributes attributes)
 	{
 		const vec3 textureCol = texture.atUV(vertex.u, vertex.v);
 
-		const float lambertian = vec3::dot(vertex.normal, lightDirection);
-		const vec3 col = (textureCol * vertex.color * lambertian).saturate();
+		//const float lambertian = vec3::dot(vertex.normal, lightDirection);
+		const vec3 col = (textureCol * vertex.color /** lambertian*/).saturate();
 
+		const vec3 lightSpaceProjected = (attributes.lightSpacePosition.xyz() / attributes.lightSpacePosition.w())*vec3(.5f, .5f, 1.0f) + vec3(.5f, .5f, .0f);
 
+		const float closestDepth = shadowMap.atUV(lightSpaceProjected.x(), lightSpaceProjected.y(), sampling::SamplerMode::Bilinear);
+		const float currentDepth = lightSpaceProjected.z();
+		const float shadow = currentDepth > closestDepth ? 1.0f : 0.5f;
 
-		return vec4::fromPoint(col);
+		return vec4::fromPoint(col * shadow);
 	};
 
-	auto drawInfo = gl::DrawInfo{ colorImage, vertexShader, fragmentShader, &depthImage };
+	auto drawInfo = gl::makeDrawInfo<vec4, ColorPassAttributes>(colorImage, vertexShader, fragmentShader, &depthImage);
 
 	gl::Rasterizer::drawTriangles(handle, drawInfo);
 }
 
+void writeToBMP(std::span<float> span, const char* name)
+{
+	std::vector<bmp::color> spanAsColors(span.size());
+	for (size_t i = 0; i < spanAsColors.size(); i++)
+	{
+		const float in = span[i];
+		const unsigned char value = static_cast<unsigned char>(255.9f * in);
+		spanAsColors[i] = bmp::color{ value, value , value, 0xff };
+	}
+
+	const bmp::writeInfo writeInfo =
+	{
+		.path = name,
+		.xPixelCount = width,
+		.yPixelCount = height,
+		.contents = spanAsColors.data()
+	};
+	bmp::write(writeInfo);
+}
+
+void writeToBMP(std::span<vec4> span, const char *name)
+{
+	std::vector<bmp::color> spanAsColors(span.size());	
+
+	for(size_t i = 0; i < spanAsColors.size(); i++)
+	{
+		constexpr float toByte = 255.9f;
+		const vec4 in = span[i];
+		spanAsColors[i] = bmp::color{ (uint8_t)(in.b() * toByte), (uint8_t)(in.g() * toByte) , (uint8_t)(in.r() * toByte), 0xff };
+	}
+
+	const bmp::writeInfo writeInfo =
+	{
+		.path = name,
+		.xPixelCount = width,
+		.yPixelCount = height,
+		.contents = spanAsColors.data()
+	};
+	bmp::write(writeInfo);
+}
 
 int main()
 {
 	RenderToWindow window(width, height, "rasterizer!!!");
 
-	CoreLoop::run([&](const Time &time)
+	CoreLoop::run([&](const Time &time, const Input &input)
 	{
+		const bool screenshot = input[input::VirtualKeys::Space] == input::InputState::Pressed;
+
 		shadowMapPass(time);
+
+		if(screenshot)
+		{
+			const std::span<float> shadowmapData = std::span<float>(shadowMap.data, shadowMap.height * shadowMap.width);
+			writeToBMP(shadowmapData, "shadowmap.bmp");
+		}
+
 		colorPass(time);
+
+		if(screenshot)
+		{
+			const std::span<vec4> colorImageData = std::span<vec4>(colorImage.data, colorImage.height * colorImage.width);
+			writeToBMP(colorImageData, "color.bmp");
+			const std::span<float> depthImageData = std::span<float>(depthImage.data, depthImage.height * depthImage.width);
+			writeToBMP(depthImageData, "depth.bmp");
+		}
+
 		window.updateImage(colorImage.data);
 	});
 

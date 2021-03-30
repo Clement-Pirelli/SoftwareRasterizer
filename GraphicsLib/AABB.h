@@ -3,6 +3,7 @@
 #include <limits>
 #include "Utilities.h"
 #include "vec.h"
+#include <cstdint>
 
 #define _min(a,b) (a < b ? a : b)
 #define _max(a,b) (a < b ? b : a)
@@ -12,7 +13,7 @@ class AABB
 {
 public:
 
-	constexpr AABB(const vec<N> &givenMin, const vec<N> &givenMax) : min(givenMin), max(givenMax) {}
+	constexpr AABB(const vec<float, N> &givenMin, const vec<float, N> &givenMax) : min(givenMin), max(givenMax) {}
 	constexpr AABB() {}
 
 	static AABB<N> united(const AABB<N> &firstBox, const AABB<N> &secondBox)
@@ -43,8 +44,8 @@ public:
 		return true;
 	}
 
-	vec<N> min;
-	vec<N> max;
+	vec<float, N> min;
+	vec<float, N> max;
 };
 
 using AABB2 = AABB<2>;

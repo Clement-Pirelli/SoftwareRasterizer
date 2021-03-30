@@ -1,4 +1,9 @@
 #pragma once
+#include <cmath>
+#include "AABB.h"
+#include "Sampling.h"
+#include <assert.h>
+
 namespace gl
 {
 	template<class T>
@@ -17,7 +22,6 @@ namespace gl
 			width(info.width),
 			height(info.height),
 			data(new T[info.width * info.height]),
-			bounds(calculateBounds()),
 			clearValue(info.clearValue)
 		{
 			clear();
@@ -29,15 +33,51 @@ namespace gl
 		}
 
 		[[nodiscard]]
-		T &at(size_t x, size_t y) const
+		const T& atTexel(size_t x, size_t y) const
 		{
 			return data[x + width * y];
 		}
 
 		[[nodiscard]]
-		T &at(size_t index) const
+		T &atTexel(size_t x, size_t y)
+		{
+			return data[x + width * y];
+		}
+
+		[[nodiscard]]
+		T &atIndex(size_t index)
 		{
 			return data[index];
+		}
+
+		[[nodiscard]]
+		T atUV(float u, float v, sampling::SamplerMode mode = sampling::SamplerMode::Nearest) const
+		{
+			float _;
+			u = modf(u, &_);
+			v = modf(v, &_);
+
+			switch (mode)
+			{
+			case sampling::SamplerMode::Nearest:
+			{
+				return atTexel(size_t(u * width), size_t(v * height));
+			} break;
+			case sampling::SamplerMode::Bilinear:
+			{
+				const ivec2 dimensions = ivec2(static_cast<int>(width), static_cast<int>(height));
+				auto sampleTexel = [this](int x, int y)
+				{
+					assert(x >= 0 && y >= 0);
+					return atTexel(size_t(x), size_t(y));
+				};
+				return sampling::bilinear<T, decltype(sampleTexel)>(u, v, dimensions, sampleTexel);
+
+			} break;
+			default:
+				assert(false);
+				return T{};
+			}
 		}
 
 		void clear()
@@ -50,16 +90,15 @@ namespace gl
 
 		size_t width = {}, height = {};
 		T *data = nullptr;
-		const AABB2 bounds;
-		const T clearValue;
 
-	private:
 		[[nodiscard]]
-		AABB2 calculateBounds() const
+		AABB2 bounds() const
 		{
 			vec2 min = vec2(0.0f, 0.0f);
 			vec2 max = vec2(static_cast<float>(width), static_cast<float>(height));
 			return AABB2(min, max);
 		}
+
+		const T clearValue;
 	};
 }

@@ -145,11 +145,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
+    <ClInclude Include="BMPWriter.h" />
     <ClInclude Include="color.h" />
+    <ClInclude Include="CommonConcepts.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GraphicsLibrary.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="mat.h" />
+    <ClInclude Include="Sampling.h" />
     <ClInclude Include="StrongTypedef.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Utilities.h" />
