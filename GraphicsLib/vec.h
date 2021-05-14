@@ -9,7 +9,7 @@ struct vec
 	static_assert(N != 0);
 
 #pragma region macro definitions
-#define COMPOUND_VEC_TO_VEC_OPERATOR(op) vec<T, N>& operator op(const vec<T, N> &other)	\
+#define COMPOUND_VEC_TO_VEC_OPERATOR(op) constexpr vec<T, N>& operator op(const vec<T, N> &other)	\
 	{																				\
 		for (size_t i = 0; i < N; i++)												\
 		{																			\
@@ -18,7 +18,7 @@ struct vec
 		return *this;																\
 	}
 
-#define COMPOUND_VEC_TO_FLOAT_OPERATOR(op) vec<T, N>& operator op(T other)			\
+#define COMPOUND_VEC_TO_FLOAT_OPERATOR(op) constexpr vec<T, N>& operator op(T other)			\
 	{																				\
 		for (size_t i = 0; i < N; i++)												\
 		{																			\
@@ -27,7 +27,7 @@ struct vec
 		return *this;																\
 	}
 
-#define VEC_TO_VEC_OPERATOR(op) vec<T, N> operator op(const vec<T, N> &other) const	\
+#define VEC_TO_VEC_OPERATOR(op) constexpr vec<T, N> operator op(const vec<T, N> &other) const	\
 	{																				\
 		vec<T, N> result = {};															\
 		for (size_t i = 0; i < N; i++)												\
@@ -37,7 +37,7 @@ struct vec
 		return result;																\
 	}
 
-#define VEC_TO_FLOAT_OPERATOR(op) vec<T, N> operator op(T other) const					\
+#define VEC_TO_FLOAT_OPERATOR(op) constexpr vec<T, N> operator op(T other) const					\
 	{																				\
 		vec<T, N> result = {};															\
 		for (size_t i = 0; i < N; i++)												\
@@ -48,17 +48,17 @@ struct vec
 	}
 
 #define VEC_ELEMENT_GETTER(elementN, name)											\
-	T name() const requires (N >= elementN) { return e[elementN]; };			\
-	T& name() requires (N >= elementN) { return e[elementN]; };
+	constexpr T name() const requires (N > elementN) { return e[elementN]; };			\
+	constexpr T& name() requires (N > elementN) { return e[elementN]; };
 
 #pragma endregion
 
-	vec() = default;
+	constexpr vec() = default;
 
-	T operator[](size_t i) const { return e[i]; }
-	T &operator[](size_t i) { return e[i]; }
+	constexpr T operator[](size_t i) const { return e[i]; }
+	constexpr T &operator[](size_t i) { return e[i]; }
 
-	bool operator==(vec<T, N> other) const
+	constexpr bool operator==(vec<T, N> other) const
 	{
 		for (size_t i = 0; i < N; i++)
 			if (e[i] != other[i]) return false;
@@ -95,27 +95,27 @@ struct vec
 	VEC_ELEMENT_GETTER(2, b);
 	VEC_ELEMENT_GETTER(3, a);
 
-	T length() const
+	constexpr T length() const
 	{
 		return (T)sqrtf((float)squaredLength());
 	}
 
-	T squaredLength() const
+	constexpr T squaredLength() const
 	{
 		return dot(*this, *this);
 	}
 
-	void normalize()
+	constexpr void normalize()
 	{
 		*this = *this / length();
 	}
 
-	vec<T, N> normalized() const
+	constexpr vec<T, N> normalized() const
 	{
 		return *this / length();
 	}
 
-	vec<T, N> clampedBy(vec<T, N> min, vec<T, N> max) const
+	constexpr vec<T, N> clampedBy(vec<T, N> min, vec<T, N> max) const
 	{
 		vec<T, N> copy = *this;
 		for (size_t i = 0; i < N; i++)
@@ -126,7 +126,7 @@ struct vec
 		return copy;
 	}
 
-	vec<T, N> &saturate()
+	constexpr vec<T, N> &saturate()
 	{
 		for (size_t i = 0; i < N; i++)
 		{
@@ -137,35 +137,35 @@ struct vec
 		return *this;
 	}
 
-	static vec<T, N> lerp(const vec<T, N> &v1, const vec<T, N> &v2, T t)
+	static constexpr vec<T, N> lerp(const vec<T, N> &v1, const vec<T, N> &v2, T t)
 	{
 		return v1 * (T{ 1 } - t) + v2 * t;
 	}
 
-	vec<T, 2> xy() const requires (N >= 3)
+	constexpr vec<T, 2> xy() const requires (N >= 3)
 	{
 		return vec<T, 2>(x(), y());
 	};
 
-	vec<T, 3> xyz() const requires (N >= 4)
+	constexpr vec<T, 3> xyz() const requires (N >= 4)
 	{
 		return vec<T, 3>(x(), y(), z());
 	};
 
-	vec(T givenX, T givenY) requires (N == 2)
+	constexpr vec(T givenX, T givenY) requires (N == 2)
 	{
 		e[0] = givenX;
 		e[1] = givenY;
 	};
 
-	vec(T givenX, T givenY, T givenZ) requires (N == 3)
+	constexpr vec(T givenX, T givenY, T givenZ) requires (N == 3)
 	{
 		e[0] = givenX;
 		e[1] = givenY;
 		e[2] = givenZ;
 	};
 
-	vec(T givenX, T givenY, T givenZ, T givenW) requires (N == 4)
+	constexpr vec(T givenX, T givenY, T givenZ, T givenW) requires (N == 4)
 	{
 		e[0] = givenX;
 		e[1] = givenY;
@@ -173,7 +173,17 @@ struct vec
 		e[3] = givenW;
 	};
 
-	static T dot(const vec<T, N> &a, const vec<T, N> &b)
+	static constexpr vec<T, N> absolute(vec<T, N> v)
+	{
+		vec<T, N> result{};
+		for (size_t i = 0; i < N; i++)
+		{
+			result[i] = v[i] < .0f ? -v[i] : v[i];
+		}
+		return result;
+	}
+
+	static constexpr T dot(const vec<T, N> &a, const vec<T, N> &b)
 	{
 		T result{ 0 };
 		for (size_t i = 0; i < N; i++)
@@ -183,7 +193,7 @@ struct vec
 		return result;
 	}
 
-	static vec<T, 3> cross(const vec<T, 3> &v1, const vec<T, 3> &v2) requires (N == 3)
+	static constexpr vec<T, 3> cross(const vec<T, 3> &v1, const vec<T, 3> &v2) requires (N == 3)
 	{
 		return vec<T, 3>({
 			v1.y() * v2.z() - v1.z() * v2.y(),
@@ -205,12 +215,12 @@ struct vec
 		return false;
 	};
 
-	static vec<T, 4> fromPoint(const vec<T, 3> &point) requires (N == 4)
+	static constexpr vec<T, 4> fromPoint(const vec<T, 3> &point) requires (N == 4)
 	{
 		return vec<T, 4>(point.x(), point.y(), point.z(), T{ 1 });
 	};
 
-	static vec<T, 4> fromDirection(const vec<T, 3> &direction) requires (N == 4)
+	static constexpr vec<T, 4> fromDirection(const vec<T, 3> &direction) requires (N == 4)
 	{
 		return vec<T, 4>(direction.x(), direction.y(), direction.z(), T{ 0 });
 	};
@@ -271,6 +281,10 @@ using vec2 = vec<float, 2>;
 using ivec4 = vec<int, 4>;
 using ivec3 = vec<int, 3>;
 using ivec2 = vec<int, 2>;
+
+using uvec4 = vec<unsigned int, 4>;
+using uvec3 = vec<unsigned int, 3>;
+using uvec2 = vec<unsigned int, 2>;
 
 #undef VEC_ELEMENT_GETTER
 #undef COMPOUND_VEC_TO_VEC_OPERATOR

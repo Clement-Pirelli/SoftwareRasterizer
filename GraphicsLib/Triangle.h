@@ -140,13 +140,6 @@ struct Triangle
 			{
 				if(vertexWs[i] >= .0001f) coordinates.coordinates[i] /= vertexWs[i];
 			}
-			
-			float total = coordinates[0] + coordinates[1] + coordinates[2];
-			
-			for (int i = 0; i < 3; i++)
-			{
-				if(total >= .0001f) coordinates.coordinates[i] /= total;
-			}
 
 			return coordinates;
 		}

@@ -56,6 +56,8 @@ namespace gl
 			float _;
 			u = modf(u, &_);
 			v = modf(v, &_);
+			if (u < .0f) u += 1.0f;
+			if (v < .0f) v += 1.0f;
 
 			switch (mode)
 			{

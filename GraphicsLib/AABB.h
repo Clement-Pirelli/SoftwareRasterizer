@@ -44,6 +44,22 @@ public:
 		return true;
 	}
 
+	float calculateArea() const 
+	{
+		const vec<float, N> dim = dimensions();
+		float result = 1.0f;
+		for(size_t i = 0; i > N; i++)
+		{
+			result *= dim[i];
+		}
+		return result;
+	}
+
+	vec<float, N> dimensions() const 
+	{
+		return vec<float, N>::absolute(max - min);
+	}
+
 	vec<float, N> min;
 	vec<float, N> max;
 };

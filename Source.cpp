@@ -10,19 +10,19 @@
 #include "GraphicsLibrary.h"
 #include "BMPWriter.h"
 
-#include <cstring>
 #include <utility>
 #include <limits>
 #include <vector>
 #include <span>
 #include <algorithm>
+#include <iostream>
 
 constexpr size_t width = 500u, height = 500u;
 
 gl::FrameBuffer<vec4> colorImage = gl::FrameBuffer<vec4>({
 	.width = width,
 	.height = height,
-	.clearValue = {0,0,0,255}
+	.clearValue = {.0f,.0f,.0f,1.0f}
 	});
 
 gl::FrameBuffer<float> depthImage = gl::FrameBuffer<float>({
@@ -37,18 +37,24 @@ gl::FrameBuffer<float> shadowMap = gl::FrameBuffer<float>({
 	.clearValue = 1000000000.0f
 	});
 
-const gl::BufferHandle handle = gl::Rasterizer::uploadBuffer(ModelLoader::loadModel("assets/head.obj"));
+const gl::ModelHandle handle = gl::Rasterizer::uploadModel(ModelLoader::loadModel("assets/head.obj"));
 
 const Image texture = Image("assets/head_diffuse.png");
 
-const vec3 lightDirection = vec3(1.0f, 1.0f, 1.0f).normalized();
+//todo: constexpr sqrt somehow
+const vec3 lightDirection = vec3(-1.0f, 1.0f, 1.0f).normalized();
 
 struct MVP
 {
 	mat4x4 model;
 	mat4x4 view;
 	mat4x4 projection;
+
+	mat4x4 calculate() const { return projection*view*model; }
 };
+
+constexpr float zFar = 5.0f;
+constexpr float zNear = .5f;
 
 MVP getMVP(const Time& time)
 {
@@ -60,8 +66,8 @@ MVP getMVP(const Time& time)
 		{
 			.fovX = 50.0f * 3.14159265359f / 180.0f,
 			.aspectRatio = width / static_cast<float>(height),
-			.zfar = 10000.0f,
-			.znear = .1f
+			.zfar = zFar,
+			.znear = zNear
 		})
 	};
 }
@@ -80,8 +86,8 @@ MVP getShadowMapMVP(const Time &time)
 			.left = -1,
 			.top = 1,
 			.bottom = -1,
-			.far = 5.0f,
-			.near = .2f})
+			.far = zFar,
+			.near = zNear})
 	};
 }
 
@@ -96,13 +102,13 @@ struct ShadowPassAttributes
 void shadowMapPass(const Time &time)
 {
 	shadowMap.clear();
+	depthImage.clear();
 
 	MVP mvp = getShadowMapMVP(time);
 
 	auto vertexShader = [&mvp](Triangle::Vertex vertex) -> gl::VertexReturn<ShadowPassAttributes>
 	{
-		vec4 &position = vertex.position;
-		position = mvp.projection * mvp.view * mvp.model * position;
+		vertex.position = mvp.calculate() * vertex.position;
 		return { vertex };
 	};
 
@@ -111,7 +117,7 @@ void shadowMapPass(const Time &time)
 		return v.position.z();
 	};
 
-	auto drawInfo = gl::makeDrawInfo<float, ShadowPassAttributes>(depthImage, vertexShader, fragmentShader, &shadowMap);
+	auto drawInfo = gl::makeDrawInfo<float, ShadowPassAttributes>(shadowMap, vertexShader, fragmentShader, &depthImage);
 
 	gl::Rasterizer::drawTriangles(handle, drawInfo);
 }
@@ -135,12 +141,12 @@ void colorPass(const Time& time)
 
 	auto vertexShader = [&mvp, &shadowMapMVP](Triangle::Vertex vertex) -> gl::VertexReturn<ColorPassAttributes>
 	{
-		const vec4 normal = mvp.model.inversed().transposed() * vec4::fromDirection(vertex.normal);
-		vertex.normal = normal.xyz();
+		const vec4 normal = vec4::fromDirection(vertex.normal);
+		const vec4 offset = normal * .01f;
+		const vec4 lightSpacePosition = shadowMapMVP.calculate() * (vertex.position + offset);
 
-		const vec4 lightSpacePosition = shadowMapMVP.projection * shadowMapMVP.view * mvp.model * vertex.position + normal*.01f;
-
-		vertex.position = mvp.projection * mvp.view * mvp.model * vertex.position;
+		vertex.normal = (mvp.model.inversed().transposed() * normal).xyz();
+		vertex.position = mvp.calculate() * vertex.position;
 
 		return { vertex, { lightSpacePosition } };
 	};
@@ -148,17 +154,18 @@ void colorPass(const Time& time)
 	auto fragmentShader = [&](const Triangle::Vertex &vertex, ColorPassAttributes attributes)
 	{
 		const vec3 textureCol = texture.atUV(vertex.u, vertex.v);
+		const vec3 normal = vertex.normal.normalized();
 
-		//const float lambertian = vec3::dot(vertex.normal, lightDirection);
-		const vec3 col = (textureCol * vertex.color /** lambertian*/).saturate();
+		const float lambertian = vec3::dot(normal, lightDirection);
+		const vec3 col = (textureCol * vertex.color * lambertian).saturate();
 
-		const vec3 lightSpaceProjected = (attributes.lightSpacePosition.xyz() / attributes.lightSpacePosition.w())*vec3(.5f, .5f, 1.0f) + vec3(.5f, .5f, .0f);
+		const vec3 lightSpaceProjected = (attributes.lightSpacePosition.xyz() / attributes.lightSpacePosition.w()) * vec3(.5f, .5f, 1.0f) + vec3(.5f, .5f, .0f);
 
-		const float closestDepth = shadowMap.atUV(lightSpaceProjected.x(), lightSpaceProjected.y(), sampling::SamplerMode::Bilinear);
-		const float currentDepth = lightSpaceProjected.z();
-		const float shadow = currentDepth > closestDepth ? 1.0f : 0.5f;
+		const float lightSpaceDepth = shadowMap.atUV(lightSpaceProjected.x(), lightSpaceProjected.y(), sampling::SamplerMode::Nearest);
+		const float currentLightSpaceDepth = lightSpaceProjected.z();
+		const float shadow = currentLightSpaceDepth < lightSpaceDepth ? 1.0f : 0.4f;
 
-		return vec4::fromPoint(col * shadow);
+		return vec4::fromPoint(col*shadow);
 	};
 
 	auto drawInfo = gl::makeDrawInfo<vec4, ColorPassAttributes>(colorImage, vertexShader, fragmentShader, &depthImage);
@@ -209,7 +216,7 @@ void writeToBMP(std::span<vec4> span, const char *name)
 
 int main()
 {
-	RenderToWindow window(width, height, "rasterizer!!!");
+	RenderToWindow window(width, height, "color");
 
 	CoreLoop::run([&](const Time &time, const Input &input)
 	{

@@ -82,17 +82,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 RenderToWindow::RenderToWindow(size_t width, size_t height, const char *title) : width(width), height(height), rt(nullptr)
 {
-	const char *const myclass = "minimalWindowClass";
-
-	WNDCLASSEXA wc = {};
-	wc.cbSize = sizeof(wc);
-	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wc.lpfnWndProc = DefWindowProcA;
-	wc.hInstance = GetModuleHandleA(0);
-	wc.hCursor = LoadCursorA(0, MAKEINTRESOURCEA(32512)); //arrow
-	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wc.lpszClassName = myclass;
-
+	WNDCLASSEXA wc 
+	{
+		.cbSize = sizeof(wc),
+		.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
+		.lpfnWndProc = DefWindowProcA,
+		.hInstance = GetModuleHandleA(NULL),
+		.hCursor = LoadCursorA(0, MAKEINTRESOURCEA(32512)), //arrow
+		.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH),
+		.lpszClassName = title
+	};
+	
 	if (RegisterClassExA(&wc))
 	{
 		DWORD window_style = (WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX));

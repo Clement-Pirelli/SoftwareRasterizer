@@ -16,6 +16,7 @@ public:
 	void updateImage(vec4 *image);
 	void updateImage(float *image);
 private:
+
 	size_t width, height;
 	RenderTarget *rt;
 	RenderToWindow() = delete;

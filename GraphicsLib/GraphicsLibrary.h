@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "Triangle.h"
 #include "StrongTypedef.h"
 #include "vec.h"
@@ -9,13 +8,15 @@
 #include "Image.h"
 #include "Utilities.h"
 #include "AABB.h"
-#include <unordered_map>
 #include "CommonConcepts.h"
+
+#include <vector>
+#include <unordered_map>
 
 namespace gl
 {
 	using Model = StrongTypedef<std::vector<Triangle>, struct ModelId>;
-	using BufferHandle = StrongTypedef<uint64_t, struct BufferHandleId>;
+	using ModelHandle = StrongTypedef<uint64_t, struct ModelHandleId>;
 
 	template<typename T>
 	concept Shader = requires(T a)
@@ -47,49 +48,66 @@ namespace gl
 	};
 
 	template<typename RenderTarget_t, Attributes Attributes_t>
-	auto makeDrawInfo(FrameBuffer<RenderTarget_t>&target, auto vertexShader, auto fragmentShader, FrameBuffer<float>* depthBuffer = nullptr)
+	auto makeDrawInfo(FrameBuffer<RenderTarget_t> &target, auto vertexShader, auto fragmentShader, FrameBuffer<float> *depthBuffer = nullptr)
 	{
 		return DrawInfo <RenderTarget_t, decltype(vertexShader), decltype(fragmentShader), Attributes_t>
 		{
 			.target = target,
-			.vertexShader = vertexShader,
-			.fragmentShader = fragmentShader,
-			.depthBuffer = depthBuffer
+				.vertexShader = vertexShader,
+				.fragmentShader = fragmentShader,
+				.depthBuffer = depthBuffer
 		};
-	}
+	};
 
 	class Rasterizer
 	{
 	public:
 
 		[[nodiscard]]
-		static BufferHandle uploadBuffer(const Model &model)
+		static ModelHandle uploadModel(Model &&model)
 		{
 			static uint64_t nextHandle = 0U;
 			nextHandle++;
-			buffers[BufferHandle(nextHandle)] = model;
+			models[ModelHandle(nextHandle)] = std::move(model);
 			return nextHandle;
 		}
 
-		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, Attributes Attributes_t>
-		static void drawTriangles(BufferHandle handle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t>& drawInfo)
+		static void deleteModel(ModelHandle handle)
 		{
-			if(buffers.contains(handle))
+			if(auto foundIterator = models.find(handle);
+				foundIterator != models.end())
 			{
-				const Model &buffer = buffers[handle];
-				for (const auto &triangle : buffer.get())
-				{
-					drawTriangle(triangle, drawInfo);
-				}
+				models.erase(foundIterator);
 			}
 		}
 
+		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, Attributes Attributes_t>
+		static void drawTriangles(ModelHandle handle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t> &drawInfo)
+		{
+			if (const auto found = models.find(handle);
+				found != models.end())
+			{
+				const mat4x4 viewportMat = mat4x4::viewport({
+					.x = 0,
+					.y = 0,
+					.width = drawInfo.target.width,
+					.height = drawInfo.target.height,
+					});
+
+				const Model &model = (*found).second;
+				for (const auto &triangle : model.get())
+				{
+					drawTriangle(triangle, viewportMat, drawInfo);
+				}
+			}
+		};
+
 	private:
 
-		inline static std::unordered_map<BufferHandle, Model> buffers;
+		inline static std::unordered_map<ModelHandle, Model> models;
 
 		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, Attributes Attributes_t>
-		static void rasterize(size_t x, size_t y, Triangle& triangle, const std::array<Attributes_t, 3>&attributes, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t> &drawInfo)
+		static void rasterize(int x, int y, Triangle& triangle, const std::array<Attributes_t, 3>&attributes, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t> &drawInfo)
 		{
 			const std::array<float, 3> vertexWs{ triangle.vertices[0].position.w(), triangle.vertices[1].position.w(), triangle.vertices[2].position.w(), };
 
@@ -142,16 +160,9 @@ namespace gl
 		}
 
 		template<typename RenderTarget_t, Shader Vertex_t, Shader Fragment_t, Attributes Attributes_t>
-		static void drawTriangle(Triangle triangle, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t> &drawInfo)
+		static void drawTriangle(Triangle triangle, const mat4x4& viewportMat, DrawInfo<RenderTarget_t, Vertex_t, Fragment_t, Attributes_t> &drawInfo)
 		{
 			//vertex shader
-			mat4x4 viewportMat = mat4x4::viewport({
-				.x = 0,
-				.y = 0,
-				.width = drawInfo.target.width,
-				.height = drawInfo.target.height,
-			});
-
 			std::array<Attributes_t, 3> attributesArray = {};
 			for(size_t i = 0; i < 3; i++)
 			{
@@ -161,7 +172,7 @@ namespace gl
 				vertex = result.vertex;
 				vec4 &position = vertex.position;
 				position = viewportMat * position;
-				if (!isApproximatively(position.w(), .0f, .00001f)) 
+				if (!isApproximatively(position.w(), .0f, .001f)) 
 				{ 
 					position /= position.w();
 				};
@@ -182,12 +193,12 @@ namespace gl
 			{
 				//triangle is outside of the bounds of the screen
 				return;
-			}
+			}			
 
-			for (uint32_t y = static_cast<uint32_t>(triangleAABB.min.y()); y <= static_cast<uint32_t>(triangleAABB.max.y()); y++)
-			for (uint32_t x = static_cast<uint32_t>(triangleAABB.min.x()); x <= static_cast<uint32_t>(triangleAABB.max.x()); x++)
+			for (size_t y = static_cast<size_t>(triangleAABB.min.y()); y < static_cast<size_t>(triangleAABB.max.y())+1; y++)
+			for (size_t x = static_cast<size_t>(triangleAABB.min.x()); x < static_cast<size_t>(triangleAABB.max.x())+1; x++)
 			{
-				rasterize(x, y, triangle, attributesArray, drawInfo);
+				rasterize((int)x, (int)y, triangle, attributesArray, drawInfo);
 			}
 		}
 	};
